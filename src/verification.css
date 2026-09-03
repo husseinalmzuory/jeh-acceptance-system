@@ -55,6 +55,43 @@
 .verification-heading p { margin: 0 0 4px; color: #67768a; font-size: 13px; }
 .verification-heading h1 { margin: 0; font-size: clamp(22px, 4vw, 30px); }
 
+.verification-search {
+  margin: 10px 30px 20px;
+  padding: 18px;
+  border: 1px solid #dbe4ee;
+  border-radius: 16px;
+  background: #f8fafc;
+}
+.verification-search label { display: block; margin-bottom: 9px; font-weight: 700; color: #334155; }
+.verification-search > div { display: flex; gap: 10px; }
+.verification-search input {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  background: #fff;
+  padding: 11px 12px;
+  font: inherit;
+  text-align: left;
+}
+.verification-search button,
+.verification-again {
+  border: 0;
+  border-radius: 10px;
+  background: #153b68;
+  color: #fff;
+  padding: 10px 17px;
+  font: inherit;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  cursor: pointer;
+}
+.verification-search button:disabled { opacity: .6; cursor: not-allowed; }
+.verification-again { margin: 22px 30px 0; background: #eef2f7; color: #153b68; }
+
 .verification-state {
   min-height: 250px;
   display: grid;
@@ -148,7 +185,10 @@
   .verification-page { padding: 16px 10px; }
   .verification-card { border-radius: 16px; }
   .verification-brand, .verification-heading { padding-left: 18px; padding-right: 18px; }
+  .verification-search { margin-left: 18px; margin-right: 18px; }
+  .verification-search > div { flex-direction: column; }
   .verification-details { grid-template-columns: 1fr; padding: 0 18px; }
   .verification-details__wide { grid-column: auto; }
   .verification-result, .verification-researchers, .verification-revocation { margin-left: 18px; margin-right: 18px; }
+  .verification-again { margin-left: 18px; margin-right: 18px; }
 }
