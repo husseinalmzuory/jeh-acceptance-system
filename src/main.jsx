@@ -10,6 +10,8 @@ import AdvancedArchiveGate from './AdvancedArchiveGate.jsx'
 import AttachmentManagerRuntime from './AttachmentManagerRuntime.jsx'
 import LetterSettingsRuntime from './LetterSettingsRuntime.jsx'
 import LetterQrRuntime from './LetterQrRuntime.jsx'
+import JournalLogoRuntime from './JournalLogoRuntime.jsx'
+import LogoSettingsPanel from './LogoSettingsPanel.jsx'
 import ProductionRuntime from './ProductionRuntime.jsx'
 import RevokedLetterRuntime from './RevokedLetterRuntime.jsx'
 import './styles.css'
@@ -34,6 +36,7 @@ createRoot(document.getElementById('root')).render(
       <>
         <AdminToolsGate />
         <AccountSecurityPanel />
+        <LogoSettingsPanel />
       </>
     ) : (
       <>
@@ -41,6 +44,7 @@ createRoot(document.getElementById('root')).render(
         <AdminArchiveActions />
         <AdminQuickAccess />
         <LetterSettingsRuntime />
+        <JournalLogoRuntime />
         <LetterQrRuntime />
         <ProductionRuntime />
         <RevokedLetterRuntime />
