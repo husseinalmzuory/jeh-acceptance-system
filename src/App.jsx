@@ -105,7 +105,129 @@ function StatCard({ icon: Icon, label, value, tone }) {
   )
 }
 
+function NewAcceptanceForm({ onSaved, onCancel }) {
+  const today = new Date().toISOString().slice(0, 10)
+  const [form, setForm] = useState({
+    acceptance_number: '',
+    ojs_submission_id: '',
+    recipient_name: '',
+    recipient_affiliation: '',
+    research_title_ar: '',
+    research_title_en: '',
+    received_on: today,
+    accepted_on: today,
+    letter_date: today,
+    internal_notes: '',
+  })
+  const [saving, setSaving] = useState(false)
+  const [message, setMessage] = useState('')
+
+  const update = (event) => {
+    const { name, value } = event.target
+    setForm((current) => ({ ...current, [name]: value }))
+  }
+
+  const submit = async (event) => {
+    event.preventDefault()
+    setMessage('')
+    if (form.received_on > form.accepted_on) {
+      setMessage('تاريخ الاستلام يجب أن يكون قبل تاريخ القبول أو مساويًا له.')
+      return
+    }
+    setSaving(true)
+    const payload = Object.fromEntries(
+      Object.entries(form).map(([key, value]) => [key, value.trim?.() || value || null]),
+    )
+    const { data, error } = await supabase
+      .from('acceptances')
+      .insert(payload)
+      .select('id')
+      .single()
+    setSaving(false)
+    if (error) {
+      setMessage(error.code === '23505'
+        ? 'رقم القبول مستخدم سابقًا. أدخل رقمًا آخر.'
+        : 'تعذر حفظ القبول. تحقق من البيانات وحاول مرة أخرى.')
+      return
+    }
+    onSaved(data.id)
+  }
+
+  return (
+    <section className="form-page">
+      <div className="page-heading">
+        <div><p>قبولات النشر</p><h1>إصدار قبول جديد</h1></div>
+        <button className="outline-button" type="button" onClick={onCancel}>العودة إلى لوحة التحكم</button>
+      </div>
+
+      <form className="acceptance-form" onSubmit={submit}>
+        <div className="form-section">
+          <div className="form-section__title"><span>1</span><div><h2>بيانات الكتاب</h2><p>رقم وتاريخ كتاب القبول الرسمي</p></div></div>
+          <div className="form-grid form-grid--3">
+            <label>رقم القبول الرسمي *
+              <input name="acceptance_number" value={form.acceptance_number} onChange={update} placeholder="مثال: 157/8" required />
+            </label>
+            <label>تاريخ الكتاب *
+              <input type="date" name="letter_date" value={form.letter_date} onChange={update} required />
+            </label>
+            <label>رقم البحث في OJS
+              <input name="ojs_submission_id" value={form.ojs_submission_id} onChange={update} placeholder="اختياري" />
+            </label>
+          </div>
+        </div>
+
+        <div className="form-section">
+          <div className="form-section__title"><span>2</span><div><h2>بيانات الباحث</h2><p>الاسم والجهة كما سيظهران في كتاب القبول</p></div></div>
+          <div className="form-grid form-grid--2">
+            <label>اسم الباحث مع اللقب العلمي *
+              <input name="recipient_name" value={form.recipient_name} onChange={update} placeholder="مثال: أ.م.د. نبراس حسين مهاوش" required />
+            </label>
+            <label>الجهة *
+              <input name="recipient_affiliation" value={form.recipient_affiliation} onChange={update} placeholder="مثال: كلية الإعلام / جامعة بغداد" required />
+            </label>
+          </div>
+        </div>
+
+        <div className="form-section">
+          <div className="form-section__title"><span>3</span><div><h2>بيانات البحث</h2><p>عنوان البحث وتواريخ الاستلام والقبول</p></div></div>
+          <div className="form-grid">
+            <label>عنوان البحث باللغة العربية *
+              <textarea name="research_title_ar" value={form.research_title_ar} onChange={update} rows="3" required />
+            </label>
+            <label>عنوان البحث باللغة الإنجليزية
+              <textarea name="research_title_en" value={form.research_title_en} onChange={update} rows="2" dir="ltr" />
+            </label>
+          </div>
+          <div className="form-grid form-grid--2 dates-row">
+            <label>تاريخ الاستلام *
+              <input type="date" name="received_on" value={form.received_on} onChange={update} required />
+            </label>
+            <label>تاريخ القبول *
+              <input type="date" name="accepted_on" value={form.accepted_on} onChange={update} required />
+            </label>
+          </div>
+        </div>
+
+        <div className="form-section">
+          <div className="form-section__title"><span>4</span><div><h2>ملاحظات داخلية</h2><p>لا تظهر هذه الملاحظات في كتاب القبول</p></div></div>
+          <label><textarea name="internal_notes" value={form.internal_notes} onChange={update} rows="3" placeholder="اختياري" /></label>
+        </div>
+
+        {message && <div className="form-error" role="alert">{message}</div>}
+        <div className="form-actions">
+          <button className="outline-button" type="button" onClick={onCancel}>إلغاء</button>
+          <button className="primary-button" disabled={saving}>
+            {saving ? <LoaderCircle className="spin" size={20} /> : <FileCheck2 size={20} />}
+            {saving ? 'جارٍ الحفظ...' : 'حفظ ومتابعة المعاينة'}
+          </button>
+        </div>
+      </form>
+    </section>
+  )
+}
+
 function Dashboard({ session }) {
+  const [view, setView] = useState('dashboard')
   const [count, setCount] = useState(null)
   const [recent, setRecent] = useState([])
   const [loading, setLoading] = useState(true)
@@ -137,13 +259,15 @@ function Dashboard({ session }) {
     [recent, currentYear],
   )
 
+  const openNew = () => setView('new')
+
   return (
     <div className="app-shell">
       <aside className="sidebar">
         <Brand compact />
         <nav aria-label="التنقل الرئيسي">
           <button className="nav-item nav-item--active"><LayoutDashboard size={20} /> لوحة التحكم</button>
-          <button className="nav-item"><FilePlus2 size={20} /> إصدار قبول جديد</button>
+          <button className={`nav-item ${view === 'new' ? 'nav-item--active' : ''}`} onClick={openNew}><FilePlus2 size={20} /> إصدار قبول جديد</button>
           <button className="nav-item"><Archive size={20} /> أرشيف القبولات</button>
           <button className="nav-item"><Search size={20} /> البحث المتقدم</button>
         </nav>
@@ -162,9 +286,12 @@ function Dashboard({ session }) {
         </header>
 
         <div className="dashboard__content">
+          {view === 'new' ? (
+            <NewAcceptanceForm onCancel={() => setView('dashboard')} onSaved={() => setView('dashboard')} />
+          ) : <>
           <section className="welcome-row">
             <div><p>مرحبًا بك</p><h1>لوحة قبولات النشر</h1></div>
-            <button className="primary-button"><FilePlus2 size={20} /> إصدار قبول جديد</button>
+            <button className="primary-button" onClick={openNew}><FilePlus2 size={20} /> إصدار قبول جديد</button>
           </section>
 
           <section className="stats-grid">
@@ -186,7 +313,7 @@ function Dashboard({ session }) {
                 <div className="empty-state__icon"><Archive size={30} /></div>
                 <h3>الأرشيف فارغ حاليًا</h3>
                 <p>ابدأ بإصدار أول كتاب قبول ليظهر هنا تلقائيًا.</p>
-                <button className="secondary-button"><FilePlus2 size={18} /> إصدار أول قبول</button>
+                <button className="secondary-button" onClick={openNew}><FilePlus2 size={18} /> إصدار أول قبول</button>
               </div>
             ) : (
               <div className="acceptance-list">
@@ -200,6 +327,7 @@ function Dashboard({ session }) {
               </div>
             )}
           </section>
+          </>}
         </div>
       </main>
     </div>
