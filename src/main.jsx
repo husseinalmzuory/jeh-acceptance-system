@@ -12,6 +12,7 @@ import LetterSettingsRuntime from './LetterSettingsRuntime.jsx'
 import LetterQrRuntime from './LetterQrRuntime.jsx'
 import JournalLogoRuntime from './JournalLogoRuntime.jsx'
 import LogoSettingsPanel from './LogoSettingsPanel.jsx'
+import LetterDateFormatRuntime from './LetterDateFormatRuntime.jsx'
 import ProductionRuntime from './ProductionRuntime.jsx'
 import RevokedLetterRuntime from './RevokedLetterRuntime.jsx'
 import './styles.css'
@@ -46,6 +47,7 @@ createRoot(document.getElementById('root')).render(
         <LetterSettingsRuntime />
         <JournalLogoRuntime />
         <LetterQrRuntime />
+        <LetterDateFormatRuntime />
         <ProductionRuntime />
         <RevokedLetterRuntime />
       </>
