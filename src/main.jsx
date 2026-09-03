@@ -8,6 +8,7 @@ import AdminToolsGate from './AdminToolsGate.jsx'
 import AdvancedArchiveGate from './AdvancedArchiveGate.jsx'
 import LetterSettingsRuntime from './LetterSettingsRuntime.jsx'
 import LetterQrRuntime from './LetterQrRuntime.jsx'
+import ProductionRuntime from './ProductionRuntime.jsx'
 import './styles.css'
 import './letter-verification.css'
 
@@ -32,6 +33,7 @@ createRoot(document.getElementById('root')).render(
         <AdminQuickAccess />
         <LetterSettingsRuntime />
         <LetterQrRuntime />
+        <ProductionRuntime />
       </>
     )}
   </StrictMode>,
