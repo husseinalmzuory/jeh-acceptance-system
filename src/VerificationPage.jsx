@@ -10,8 +10,9 @@ function formatArabicDate(value) {
 }
 
 export default function VerificationPage({ token }) {
-  const [acceptanceNumber, setAcceptanceNumber] = useState('')
-  const [state, setState] = useState({ loading: Boolean(token), data: null, error: '' })
+  const directNumber = new URLSearchParams(window.location.search).get('number')?.trim() ?? ''
+  const [acceptanceNumber, setAcceptanceNumber] = useState(directNumber)
+  const [state, setState] = useState({ loading: Boolean(token || directNumber), data: null, error: '' })
 
   const applyResult = (data, error, notFoundMessage) => {
     if (error) {
@@ -28,19 +29,27 @@ export default function VerificationPage({ token }) {
 
   useEffect(() => {
     let active = true
-    const verifyToken = async () => {
-      if (!token) return
+    const verifyInitial = async () => {
+      if (!token && !directNumber) return
       if (!isSupabaseConfigured || !supabase) {
         if (active) setState({ loading: false, data: null, error: 'تعذر الاتصال بخدمة التحقق.' })
         return
       }
-      const result = await supabase.rpc('verify_acceptance', { token })
+
+      const result = token
+        ? await supabase.rpc('verify_acceptance', { token })
+        : await supabase.rpc('verify_acceptance_by_number', { p_acceptance_number: directNumber })
+
       if (!active) return
-      applyResult(result.data, result.error, 'لم يتم العثور على كتاب قبول مطابق لهذا الرابط.')
+      applyResult(
+        result.data,
+        result.error,
+        token ? 'لم يتم العثور على كتاب قبول مطابق لهذا الرابط.' : 'لم يتم العثور على كتاب قبول بهذا الرقم.',
+      )
     }
-    verifyToken()
+    verifyInitial()
     return () => { active = false }
-  }, [token])
+  }, [token, directNumber])
 
   const verifyByNumber = async (event) => {
     event.preventDefault()
@@ -57,6 +66,7 @@ export default function VerificationPage({ token }) {
 
   const { loading, data, error } = state
   const isRevoked = data?.document_status === 'revoked'
+  const directLookup = Boolean(token || directNumber)
 
   return (
     <main className="verification-page">
@@ -77,7 +87,7 @@ export default function VerificationPage({ token }) {
           </div>
         </div>
 
-        {!token && (
+        {!directLookup && (
           <form className="verification-search" onSubmit={verifyByNumber}>
             <label htmlFor="acceptance-number">أدخل رقم القبول كما هو مثبت في الكتاب</label>
             <div>
@@ -151,7 +161,7 @@ export default function VerificationPage({ token }) {
               </div>
             )}
 
-            {!token && (
+            {!directLookup && (
               <button className="verification-again" type="button" onClick={() => setState({ loading: false, data: null, error: '' })}>
                 التحقق من قبول آخر
               </button>
