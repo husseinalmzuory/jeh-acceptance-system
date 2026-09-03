@@ -12,22 +12,37 @@ function buildVerificationUrl(acceptanceNumber) {
   return url.toString()
 }
 
+function shortVerificationUrl(acceptanceNumber) {
+  return `husseinalmzuory.github.io/jeh-acceptance-system/?verification=1&number=${encodeURIComponent(acceptanceNumber)}`
+}
+
 function findAcceptanceNumber(letter) {
   const firstMetaBlock = letter.querySelector('.letter-meta > div')
   const numberNode = firstMetaBlock?.querySelector('span[dir="ltr"]')
   return numberNode?.textContent?.trim() ?? ''
 }
 
+function extractEmail(contact) {
+  const emailSpan = [...contact.querySelectorAll(':scope > span')]
+    .find((node) => node.textContent?.includes('البريد الإلكتروني'))
+  const raw = emailSpan?.textContent ?? 'البريد الإلكتروني: mzuory@gmail.com'
+  const match = raw.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)
+  return match?.[0] ?? 'mzuory@gmail.com'
+}
+
 function ensureQrContainer(letter) {
   const contact = letter.querySelector('.letter-contact')
   if (!contact) return null
+
+  contact.classList.add('letter-contact--qr-layout')
+
   let container = contact.querySelector('.letter-qr-runtime')
   if (!container) {
     container = document.createElement('div')
     container.className = 'letter-qr-runtime'
     contact.appendChild(container)
   }
-  return container
+  return { container, contact }
 }
 
 export default function LetterQrRuntime() {
@@ -51,15 +66,19 @@ export default function LetterQrRuntime() {
     const renderQr = async (letter) => {
       const acceptanceNumber = findAcceptanceNumber(letter)
       if (!acceptanceNumber) return
-      const container = ensureQrContainer(letter)
-      if (!container || container.dataset.acceptanceNumber === acceptanceNumber) return
 
+      const result = ensureQrContainer(letter)
+      if (!result) return
+      const { container, contact } = result
+      const email = extractEmail(contact)
+
+      if (container.dataset.acceptanceNumber === acceptanceNumber) return
       container.dataset.acceptanceNumber = acceptanceNumber
       container.innerHTML = '<span class="letter-qr-loading">جارٍ تجهيز رمز التحقق...</span>'
 
       const factory = await loadFactory()
       if (disposed || !factory) {
-        if (container) container.innerHTML = ''
+        container.innerHTML = ''
         return
       }
 
@@ -68,11 +87,14 @@ export default function LetterQrRuntime() {
         const qr = factory(0, 'M')
         qr.addData(verificationUrl)
         qr.make()
+
         container.innerHTML = `
           <div class="letter-qr-image" aria-label="رمز QR للتحقق من القبول">${qr.createSvgTag({ cellSize: 2, margin: 0, scalable: true })}</div>
           <div class="letter-qr-copy">
-            <strong>التحقق الإلكتروني</strong>
-            <span>امسح الرمز للتحقق من صحة كتاب القبول</span>
+            <div class="letter-qr-email" dir="ltr">${email}</div>
+            <strong>امسح الرمز للتحقق من صحة قبول النشر</strong>
+            <span>أو أدخل الرابط للتحقق من صحة القبول:</span>
+            <b class="letter-qr-url" dir="ltr">${shortVerificationUrl(acceptanceNumber)}</b>
           </div>
         `
       } catch {
