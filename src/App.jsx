@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   Archive,
   BookOpen,
@@ -7,10 +7,12 @@ import {
   FileCheck2,
   FilePlus2,
   Eye,
+  Download,
   LayoutDashboard,
   LoaderCircle,
   LogOut,
   Plus,
+  Printer,
   Search,
   ShieldCheck,
   Trash2,
@@ -275,11 +277,50 @@ function formatArabicDate(value) {
 function AcceptancePreview({ draft, onEdit, onConfirmed }) {
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
+  const [issuedId, setIssuedId] = useState(null)
+  const letterRef = useRef(null)
   const { form, researchers } = draft
+
+  const downloadPdf = async () => {
+    if (!letterRef.current) return
+    const { default: html2pdf } = await import('html2pdf.js')
+    await document.fonts?.ready
+    const safeNumber = form.acceptance_number.replace(/[\\/:*?"<>|\s]+/g, '-')
+    letterRef.current.classList.add('pdf-exporting')
+    try {
+      await html2pdf().set({
+        margin: 0,
+        filename: `قبول-نشر-${safeNumber}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: {
+          scale: 2,
+          useCORS: true,
+          backgroundColor: '#ffffff',
+          scrollX: 0,
+          scrollY: 0,
+        },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] },
+      }).from(letterRef.current).save()
+    } finally {
+      letterRef.current.classList.remove('pdf-exporting')
+    }
+  }
 
   const confirmIssue = async () => {
     setSaving(true)
     setMessage('')
+    if (issuedId) {
+      try {
+        await downloadPdf()
+        onConfirmed(issuedId)
+      } catch {
+        setMessage('القبول محفوظ، لكن تعذر تنزيل PDF. اسمح بالتنزيلات من المتصفح ثم حاول مجددًا.')
+      }
+      setSaving(false)
+      return
+    }
+
     const { data, error } = await supabase.rpc('create_acceptance', {
       p_acceptance_number: form.acceptance_number,
       p_research_title_ar: form.research_title_ar,
@@ -291,26 +332,33 @@ function AcceptancePreview({ draft, onEdit, onConfirmed }) {
       p_internal_notes: form.internal_notes,
       p_researchers: researchers,
     })
-    setSaving(false)
     if (error) {
+      setSaving(false)
       setMessage(error.code === '23505'
         ? 'رقم القبول مستخدم سابقًا. ارجع للتعديل وأدخل رقمًا آخر.'
         : 'تعذر حفظ القبول. تحقق من الاتصال وحاول مرة أخرى.')
       return
     }
-    onConfirmed(data)
+    setIssuedId(data)
+    try {
+      await downloadPdf()
+      onConfirmed(data)
+    } catch {
+      setMessage('تم حفظ القبول في الأرشيف، لكن تعذر تنزيل PDF. اسمح بالتنزيلات من المتصفح ثم اضغط «إعادة تنزيل PDF».')
+    }
+    setSaving(false)
   }
 
   return (
     <section className="preview-page">
       <div className="page-heading">
         <div><p>الخطوة الأخيرة</p><h1>معاينة كتاب القبول</h1></div>
-        <button className="outline-button" type="button" onClick={onEdit}>الرجوع لتعديل البيانات</button>
+        <button className="outline-button" type="button" onClick={onEdit} disabled={Boolean(issuedId)}>الرجوع لتعديل البيانات</button>
       </div>
 
       <div className="preview-notice">راجع الأسماء وأماكن العمل والعنوان والتواريخ. لن يُحفظ القبول قبل الضغط على «إصدار وحفظ القبول».</div>
 
-      <article className="letter-preview">
+      <article className="letter-preview" ref={letterRef}>
         <header className="letter-header">
           <div className="letter-header__english" dir="ltr">
             <strong>Republic of Iraq</strong>
@@ -378,10 +426,13 @@ function AcceptancePreview({ draft, onEdit, onConfirmed }) {
 
       {message && <div className="form-error" role="alert">{message}</div>}
       <div className="preview-actions">
-        <button className="outline-button" type="button" onClick={onEdit} disabled={saving}>تعديل البيانات</button>
+        <button className="outline-button" type="button" onClick={onEdit} disabled={saving || Boolean(issuedId)}>تعديل البيانات</button>
+        <button className="outline-button" type="button" onClick={() => window.print()} disabled={saving}>
+          <Printer size={19} /> طباعة المعاينة
+        </button>
         <button className="primary-button" type="button" onClick={confirmIssue} disabled={saving}>
-          {saving ? <LoaderCircle className="spin" size={20} /> : <FileCheck2 size={20} />}
-          {saving ? 'جارٍ إصدار القبول...' : 'إصدار وحفظ القبول'}
+          {saving ? <LoaderCircle className="spin" size={20} /> : issuedId ? <Download size={20} /> : <FileCheck2 size={20} />}
+          {saving ? 'جارٍ إنشاء ملف PDF...' : issuedId ? 'إعادة تنزيل PDF' : 'إصدار القبول وتنزيل PDF'}
         </button>
       </div>
     </section>
