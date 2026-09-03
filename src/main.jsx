@@ -6,6 +6,7 @@ import AdminArchiveActions from './AdminArchiveActions.jsx'
 import AdminQuickAccess from './AdminQuickAccess.jsx'
 import AdminToolsGate from './AdminToolsGate.jsx'
 import AdvancedArchiveGate from './AdvancedArchiveGate.jsx'
+import AttachmentManagerRuntime from './AttachmentManagerRuntime.jsx'
 import LetterSettingsRuntime from './LetterSettingsRuntime.jsx'
 import LetterQrRuntime from './LetterQrRuntime.jsx'
 import ProductionRuntime from './ProductionRuntime.jsx'
@@ -23,7 +24,10 @@ createRoot(document.getElementById('root')).render(
     {verificationToken || showVerificationPortal ? (
       <VerificationPage token={verificationToken} />
     ) : showAdvancedArchive ? (
-      <AdvancedArchiveGate />
+      <>
+        <AdvancedArchiveGate />
+        <AttachmentManagerRuntime />
+      </>
     ) : showAdminTools ? (
       <AdminToolsGate />
     ) : (
