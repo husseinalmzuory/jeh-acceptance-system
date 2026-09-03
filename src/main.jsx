@@ -5,6 +5,7 @@ import VerificationPage from './VerificationPage.jsx'
 import AdminArchiveActions from './AdminArchiveActions.jsx'
 import AdminQuickAccess from './AdminQuickAccess.jsx'
 import AdminToolsGate from './AdminToolsGate.jsx'
+import AccountSecurityPanel from './AccountSecurityPanel.jsx'
 import AdvancedArchiveGate from './AdvancedArchiveGate.jsx'
 import AttachmentManagerRuntime from './AttachmentManagerRuntime.jsx'
 import LetterSettingsRuntime from './LetterSettingsRuntime.jsx'
@@ -29,7 +30,10 @@ createRoot(document.getElementById('root')).render(
         <AttachmentManagerRuntime />
       </>
     ) : showAdminTools ? (
-      <AdminToolsGate />
+      <>
+        <AdminToolsGate />
+        <AccountSecurityPanel />
+      </>
     ) : (
       <>
         <App />
