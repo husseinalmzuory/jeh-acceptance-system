@@ -8,10 +8,12 @@ import {
   FilePlus2,
   Eye,
   Download,
+  History,
   LayoutDashboard,
   LoaderCircle,
   LogOut,
   Plus,
+  Pencil,
   Printer,
   Search,
   ShieldCheck,
@@ -112,6 +114,7 @@ function StatCard({ icon: Icon, label, value, tone }) {
 
 function NewAcceptanceForm({ initialDraft, onPreview, onCancel }) {
   const today = new Date().toISOString().slice(0, 10)
+  const isEditing = initialDraft?.mode === 'edit'
   const [form, setForm] = useState(initialDraft?.form ?? {
     acceptance_number: 'تجريبي-001',
     research_title_ar: 'التحليل المكاني للخدمات التعليمية في مدينة الموصل باستخدام نظم المعلومات الجغرافية',
@@ -126,6 +129,7 @@ function NewAcceptanceForm({ initialDraft, onPreview, onCancel }) {
     { name: 'أ.م.د. أحمد محمد علي', workplace: 'قسم الجغرافية / كلية التربية للعلوم الإنسانية / جامعة الموصل' },
     { name: 'م.د. سارة محمود حسن', workplace: 'قسم الجغرافية / كلية الآداب / جامعة بغداد' },
   ])
+  const [changeReason, setChangeReason] = useState(initialDraft?.changeReason ?? '')
   const [message, setMessage] = useState('')
 
   const update = (event) => {
@@ -166,6 +170,10 @@ function NewAcceptanceForm({ initialDraft, onPreview, onCancel }) {
       setMessage('يجب أن يكون ترتيب التواريخ: الاستلام، ثم المراجعة، ثم القبول.')
       return
     }
+    if (isEditing && !changeReason.trim()) {
+      setMessage('يجب كتابة سبب التعديل قبل الانتقال إلى المعاينة.')
+      return
+    }
     onPreview({
       form: {
         ...form,
@@ -175,13 +183,16 @@ function NewAcceptanceForm({ initialDraft, onPreview, onCancel }) {
         internal_notes: form.internal_notes.trim(),
       },
       researchers: normalizedResearchers,
+      mode: isEditing ? 'edit' : 'create',
+      acceptanceId: initialDraft?.acceptanceId ?? null,
+      changeReason: changeReason.trim(),
     })
   }
 
   return (
     <section className="form-page">
       <div className="page-heading">
-        <div><p>قبولات النشر</p><h1>إصدار قبول جديد</h1></div>
+        <div><p>قبولات النشر</p><h1>{isEditing ? 'تعديل قبول محفوظ' : 'إصدار قبول جديد'}</h1></div>
         <button className="outline-button" type="button" onClick={onCancel}>العودة إلى لوحة التحكم</button>
       </div>
 
@@ -255,12 +266,21 @@ function NewAcceptanceForm({ initialDraft, onPreview, onCancel }) {
           <label><textarea name="internal_notes" value={form.internal_notes} onChange={update} rows="3" placeholder="اختياري" /></label>
         </div>
 
+        {isEditing && (
+          <div className="form-section form-section--change-reason">
+            <div className="form-section__title"><span>5</span><div><h2>سبب التعديل</h2><p>سيظهر السبب في سجل الإصدارات الداخلي</p></div></div>
+            <label>سبب التعديل *
+              <textarea value={changeReason} onChange={(event) => setChangeReason(event.target.value)} rows="3" placeholder="مثال: تصحيح اسم الباحث أو تعديل عنوان البحث" required />
+            </label>
+          </div>
+        )}
+
         {message && <div className="form-error" role="alert">{message}</div>}
         <div className="form-actions">
           <button className="outline-button" type="button" onClick={onCancel}>إلغاء</button>
           <button className="primary-button">
             <FileCheck2 size={20} />
-            معاينة كتاب القبول
+            {isEditing ? 'معاينة النسخة المعدلة' : 'معاينة كتاب القبول'}
           </button>
         </div>
       </form>
@@ -382,7 +402,8 @@ function AcceptancePreview({ draft, onEdit, onConfirmed }) {
   const [message, setMessage] = useState('')
   const [issuedId, setIssuedId] = useState(null)
   const letterRef = useRef(null)
-  const { form, researchers } = draft
+  const { form, researchers, mode = 'create', acceptanceId, changeReason = '' } = draft
+  const isEditing = mode === 'edit'
 
   const downloadPdf = async () => {
     await exportAcceptancePdf(letterRef.current, form.acceptance_number)
@@ -402,7 +423,7 @@ function AcceptancePreview({ draft, onEdit, onConfirmed }) {
       return
     }
 
-    const { data, error } = await supabase.rpc('create_acceptance', {
+    const parameters = {
       p_acceptance_number: form.acceptance_number,
       p_research_title_ar: form.research_title_ar,
       p_research_title_en: form.research_title_en,
@@ -412,12 +433,19 @@ function AcceptancePreview({ draft, onEdit, onConfirmed }) {
       p_letter_date: form.letter_date,
       p_internal_notes: form.internal_notes,
       p_researchers: researchers,
-    })
+    }
+    const { data, error } = isEditing
+      ? await supabase.rpc('update_acceptance', {
+          p_acceptance_id: acceptanceId,
+          ...parameters,
+          p_change_reason: changeReason,
+        })
+      : await supabase.rpc('create_acceptance', parameters)
     if (error) {
       setSaving(false)
       setMessage(error.code === '23505'
-        ? 'رقم القبول مستخدم سابقًا. ارجع للتعديل وأدخل رقمًا آخر.'
-        : 'تعذر حفظ القبول. تحقق من الاتصال وحاول مرة أخرى.')
+        ? 'رقم القبول مستخدم في سجل آخر. ارجع للتعديل وأدخل رقمًا آخر.'
+        : `تعذر ${isEditing ? 'حفظ التعديل' : 'حفظ القبول'}. تحقق من الاتصال وحاول مرة أخرى.`)
       return
     }
     setIssuedId(data)
@@ -433,78 +461,17 @@ function AcceptancePreview({ draft, onEdit, onConfirmed }) {
   return (
     <section className="preview-page">
       <div className="page-heading">
-        <div><p>الخطوة الأخيرة</p><h1>معاينة كتاب القبول</h1></div>
+        <div><p>الخطوة الأخيرة</p><h1>{isEditing ? 'معاينة النسخة المعدلة' : 'معاينة كتاب القبول'}</h1></div>
         <button className="outline-button" type="button" onClick={onEdit} disabled={Boolean(issuedId)}>الرجوع لتعديل البيانات</button>
       </div>
 
-      <div className="preview-notice">راجع الأسماء وأماكن العمل والعنوان والتواريخ. لن يُحفظ القبول قبل الضغط على «إصدار وحفظ القبول».</div>
+      <div className="preview-notice">
+        {isEditing
+          ? <>راجع النسخة المعدلة. عند اعتمادها ستُحفظ كإصدار جديد، وستبقى النسخة السابقة في سجل الإصدارات. <strong>سبب التعديل:</strong> {changeReason}</>
+          : 'راجع الأسماء وأماكن العمل والعنوان والتواريخ. لن يُحفظ القبول قبل الضغط على زر الإصدار.'}
+      </div>
 
-      <article className="letter-preview" ref={letterRef}>
-        <header className="letter-header">
-          <div className="letter-header__english" dir="ltr">
-            <strong>Republic of Iraq</strong>
-            <span>Ministry of Higher Education</span>
-            <span>University of Mosul</span>
-            <span>College of Education for Humanities</span>
-          </div>
-          <img className="letter-logo" src={`${import.meta.env.BASE_URL}jeh-official-logo.png`} alt="شعار كلية التربية للعلوم الإنسانية ومجلة التربية للعلوم الإنسانية" />
-          <div className="letter-header__arabic">
-            <strong>جمهورية العراق</strong>
-            <span>وزارة التعليم العالي والبحث العلمي</span>
-            <span>جامعة الموصل</span>
-            <span>كلية التربية للعلوم الإنسانية</span>
-          </div>
-        </header>
-
-        <div className="journal-heading">
-          <h2>مجلة التربية للعلوم الإنسانية</h2>
-          <p>مجلة أكاديمية فصلية محكمة تأسست سنة 2021م</p>
-        </div>
-
-        <div className="letter-meta">
-          <div><strong>العدد:</strong> <span dir="ltr">{form.acceptance_number}</span><br /><strong>التاريخ:</strong> <span dir="ltr">{formatArabicDate(form.letter_date)}</span></div>
-          <div>رقم الإيداع في دار الكتب والوثائق ببغداد<br /><strong>2425 لسنة 2020</strong></div>
-          <div dir="ltr"><strong>ISSN 2710-124X</strong></div>
-        </div>
-
-        <div className="letter-body">
-          <h3>م/ قبول نشر بحث</h3>
-          <p className="recipient-label">{researchers.length === 1 ? 'إلى الباحث:' : 'إلى الباحثين:'}</p>
-          <div className="recipient-table">
-            {researchers.map((researcher, index) => (
-              <div className="recipient-row" key={`${researcher.name}-${index}`}>
-                <strong>{researcher.name}</strong>
-                <span>{researcher.workplace}</span>
-              </div>
-            ))}
-          </div>
-          <p className="greeting">تحية طيبة...</p>
-          <p>نود إعلامكم بقبول نشر بحثكم الموسوم:</p>
-          <p className="research-title">{form.research_title_ar}</p>
-          {form.research_title_en && <p className="research-title research-title--english" dir="ltr">{form.research_title_en}</p>}
-          <p>في مجلة التربية للعلوم الإنسانية، وسيُنشر في أحد الأعداد القادمة بعد استكمال الإجراءات العلمية والإدارية المعتمدة.</p>
-          <p>مع التقدير...</p>
-        </div>
-
-        <footer className="letter-footer">
-          <div className="letter-dates">
-            <span><strong>تاريخ الاستلام:</strong> {formatArabicDate(form.received_on)}</span>
-            <span><strong>تاريخ المراجعة:</strong> {formatArabicDate(form.reviewed_on)}</span>
-            <span><strong>تاريخ القبول:</strong> {formatArabicDate(form.accepted_on)}</span>
-          </div>
-          <div className="letter-signature">
-            <strong>أ.د. إبراهيم محمد محمود الحمداني</strong>
-            <span>رئيس هيئة التحرير</span>
-          </div>
-        </footer>
-
-        <div className="letter-contact">
-          <strong>مجلة التربية للعلوم الإنسانية</strong>
-          <span>جامعة الموصل / كلية التربية للعلوم الإنسانية / الموصل - العراق</span>
-          <span>البريد الإلكتروني: <b dir="ltr">mzuory@gmail.com</b></span>
-          <span>الهاتف: <b dir="ltr">+9647503496549</b></span>
-        </div>
-      </article>
+      <AcceptanceLetter form={form} researchers={researchers} letterRef={letterRef} />
 
       {message && <div className="form-error" role="alert">{message}</div>}
       <div className="preview-actions">
@@ -514,20 +481,23 @@ function AcceptancePreview({ draft, onEdit, onConfirmed }) {
         </button>
         <button className="primary-button" type="button" onClick={confirmIssue} disabled={saving}>
           {saving ? <LoaderCircle className="spin" size={20} /> : issuedId ? <Download size={20} /> : <FileCheck2 size={20} />}
-          {saving ? 'جارٍ إنشاء ملف PDF...' : issuedId ? 'إعادة تنزيل PDF' : 'إصدار القبول وتنزيل PDF'}
+          {saving ? 'جارٍ إنشاء ملف PDF...' : issuedId ? 'إعادة تنزيل PDF' : isEditing ? 'اعتماد التعديل وتنزيل PDF' : 'إصدار القبول وتنزيل PDF'}
         </button>
       </div>
     </section>
   )
 }
 
-function AcceptanceArchive({ initialSearch = false, onBack }) {
+function AcceptanceArchive({ initialSearch = false, onBack, onEditRecord }) {
   const [items, setItems] = useState([])
   const [query, setQuery] = useState('')
   const [loading, setLoading] = useState(true)
   const [message, setMessage] = useState('')
   const [selected, setSelected] = useState(null)
   const [downloading, setDownloading] = useState(false)
+  const [yearFilter, setYearFilter] = useState('all')
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [versionPreview, setVersionPreview] = useState(null)
   const archiveLetterRef = useRef(null)
 
   useEffect(() => {
@@ -538,10 +508,13 @@ function AcceptanceArchive({ initialSearch = false, onBack }) {
         .select(`
           id, acceptance_number, research_title_ar, research_title_en,
           recipient_name, recipient_affiliation, received_on, reviewed_on,
-          accepted_on, letter_date, document_status, internal_notes, created_at,
+          accepted_on, letter_date, document_status, internal_notes, created_at, updated_at,
           acceptance_researchers (
             author_order,
             researchers (name_ar, workplace)
+          ),
+          acceptance_versions (
+            id, version_number, data_snapshot, change_reason, created_at
           )
         `)
         .order('created_at', { ascending: false })
@@ -557,23 +530,31 @@ function AcceptanceArchive({ initialSearch = false, onBack }) {
 
   const filtered = useMemo(() => {
     const term = query.trim().toLocaleLowerCase('ar')
-    if (!term) return items
-    return items.filter((item) => [
-      item.acceptance_number,
-      item.research_title_ar,
-      item.research_title_en,
-      item.recipient_name,
-      item.recipient_affiliation,
-    ].some((value) => value?.toLocaleLowerCase('ar').includes(term)))
-  }, [items, query])
+    return items.filter((item) => {
+      const matchesText = !term || [
+        item.acceptance_number,
+        item.research_title_ar,
+        item.research_title_en,
+        item.recipient_name,
+        item.recipient_affiliation,
+      ].some((value) => value?.toLocaleLowerCase('ar').includes(term))
+      const matchesYear = yearFilter === 'all' || item.accepted_on?.startsWith(yearFilter)
+      const matchesStatus = statusFilter === 'all' || item.document_status === statusFilter
+      return matchesText && matchesYear && matchesStatus
+    })
+  }, [items, query, yearFilter, statusFilter])
+
+  const availableYears = useMemo(() => (
+    [...new Set(items.map((item) => item.accepted_on?.slice(0, 4)).filter(Boolean))].sort().reverse()
+  ), [items])
 
   if (selected) {
-    const researchers = [...(selected.acceptance_researchers ?? [])]
+    const currentResearchers = [...(selected.acceptance_researchers ?? [])]
       .sort((a, b) => a.author_order - b.author_order)
       .map((link) => link.researchers)
       .filter(Boolean)
       .map((researcher) => ({ name: researcher.name_ar, workplace: researcher.workplace }))
-    const archiveForm = {
+    const currentForm = {
       acceptance_number: selected.acceptance_number,
       research_title_ar: selected.research_title_ar,
       research_title_en: selected.research_title_en ?? '',
@@ -581,17 +562,41 @@ function AcceptanceArchive({ initialSearch = false, onBack }) {
       reviewed_on: selected.reviewed_on,
       accepted_on: selected.accepted_on,
       letter_date: selected.letter_date,
+      internal_notes: selected.internal_notes ?? '',
     }
+    const versions = [...(selected.acceptance_versions ?? [])]
+      .sort((a, b) => b.version_number - a.version_number)
+    const displayedForm = versionPreview?.data_snapshot
+      ? { ...currentForm, ...versionPreview.data_snapshot }
+      : currentForm
+    const displayedResearchers = versionPreview?.data_snapshot?.researchers?.length
+      ? versionPreview.data_snapshot.researchers
+      : currentResearchers.length
+        ? currentResearchers
+        : [{ name: selected.recipient_name, workplace: selected.recipient_affiliation }]
+    const currentVersion = versions[0]?.version_number ?? 1
 
     const downloadArchivedPdf = async () => {
       setDownloading(true)
       setMessage('')
       try {
-        await exportAcceptancePdf(archiveLetterRef.current, selected.acceptance_number)
+        await exportAcceptancePdf(archiveLetterRef.current, displayedForm.acceptance_number)
       } catch {
         setMessage('تعذر إنشاء ملف PDF. حاول مرة أخرى أو استخدم زر الطباعة.')
       }
       setDownloading(false)
+    }
+
+    const editCurrentAcceptance = () => {
+      onEditRecord({
+        mode: 'edit',
+        acceptanceId: selected.id,
+        form: currentForm,
+        researchers: currentResearchers.length
+          ? currentResearchers
+          : [{ name: selected.recipient_name, workplace: selected.recipient_affiliation }],
+        changeReason: '',
+      })
     }
 
     return (
@@ -601,6 +606,9 @@ function AcceptanceArchive({ initialSearch = false, onBack }) {
           <button className="outline-button" type="button" onClick={() => setSelected(null)}>العودة إلى الأرشيف</button>
         </div>
         <div className="archive-detail-actions">
+          <button className="outline-button edit-record-button" type="button" onClick={editCurrentAcceptance} disabled={downloading}>
+            <Pencil size={18} /> تعديل القبول
+          </button>
           <button className="outline-button" type="button" onClick={() => window.print()} disabled={downloading}>
             <Printer size={19} /> طباعة القبول
           </button>
@@ -611,7 +619,10 @@ function AcceptanceArchive({ initialSearch = false, onBack }) {
         </div>
         {message && <div className="form-error archive-detail-error" role="alert">{message}</div>}
         <article className="details-card">
-          <div className="details-status">قبول محفوظ <span>ساري</span></div>
+          <div className="details-status">
+            <div>قبول محفوظ <small>الإصدار الحالي: {currentVersion}</small></div>
+            <span className={selected.document_status === 'revoked' ? 'status-revoked' : ''}>{selected.document_status === 'revoked' ? 'ملغى' : 'ساري'}</span>
+          </div>
           <dl className="details-grid">
             <div><dt>رقم القبول</dt><dd dir="ltr">{selected.acceptance_number}</dd></div>
             <div><dt>تاريخ الكتاب</dt><dd>{formatArabicDate(selected.letter_date)}</dd></div>
@@ -622,15 +633,35 @@ function AcceptanceArchive({ initialSearch = false, onBack }) {
             <div><dt>تاريخ القبول</dt><dd>{formatArabicDate(selected.accepted_on)}</dd></div>
           </dl>
           <div className="details-researchers">
-            <h2>{researchers.length === 1 ? 'الباحث' : 'الباحثون'}</h2>
-            {researchers.length ? researchers.map((researcher, index) => (
+            <h2>{currentResearchers.length === 1 ? 'الباحث' : 'الباحثون'}</h2>
+            {currentResearchers.length ? currentResearchers.map((researcher, index) => (
               <div key={`${researcher.name}-${index}`}><strong>{researcher.name}</strong><span>{researcher.workplace}</span></div>
             )) : <p>{selected.recipient_name} — {selected.recipient_affiliation}</p>}
           </div>
           {selected.internal_notes && <div className="details-notes"><strong>ملاحظات داخلية</strong><p>{selected.internal_notes}</p></div>}
         </article>
-        <div className="archive-letter-title"><span>نسخة كتاب القبول</span><small>يمكن تنزيل هذه النسخة أو طباعتها في أي وقت</small></div>
-        <AcceptanceLetter form={archiveForm} researchers={researchers.length ? researchers : [{ name: selected.recipient_name, workplace: selected.recipient_affiliation }]} letterRef={archiveLetterRef} />
+
+        <section className="versions-card">
+          <div className="versions-card__heading"><History size={21} /><div><h2>سجل الإصدارات</h2><p>كل تعديل محفوظ ويمكن فتح نسخته السابقة</p></div></div>
+          <div className="versions-list">
+            <button className={!versionPreview ? 'version-item version-item--active' : 'version-item'} type="button" onClick={() => setVersionPreview(null)}>
+              <strong>النسخة الحالية</strong><span>الإصدار {currentVersion}</span><small>{formatArabicDate(selected.updated_at?.slice(0, 10))}</small>
+            </button>
+            {versions.filter((version) => version.version_number < currentVersion).map((version) => (
+              <button className={versionPreview?.id === version.id ? 'version-item version-item--active' : 'version-item'} type="button" key={version.id} onClick={() => setVersionPreview(version)}>
+                <strong>الإصدار {version.version_number}</strong>
+                <span>{version.change_reason || 'بدون ملاحظة'}</span>
+                <small>{formatArabicDate(version.created_at?.slice(0, 10))}</small>
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <div className="archive-letter-title">
+          <span>{versionPreview ? `معاينة الإصدار ${versionPreview.version_number}` : 'نسخة كتاب القبول الحالية'}</span>
+          <small>{versionPreview ? versionPreview.change_reason : 'يمكن تنزيل هذه النسخة أو طباعتها في أي وقت'}</small>
+        </div>
+        <AcceptanceLetter form={displayedForm} researchers={displayedResearchers} letterRef={archiveLetterRef} />
       </section>
     )
   }
@@ -646,6 +677,19 @@ function AcceptanceArchive({ initialSearch = false, onBack }) {
           <Search size={20} />
           <input autoFocus={initialSearch} value={query} onChange={(event) => setQuery(event.target.value)} placeholder="ابحث برقم القبول أو اسم الباحث أو عنوان البحث أو مكان العمل" />
         </label>
+        <label className="archive-filter">السنة
+          <select value={yearFilter} onChange={(event) => setYearFilter(event.target.value)}>
+            <option value="all">جميع السنوات</option>
+            {availableYears.map((year) => <option value={year} key={year}>{year}</option>)}
+          </select>
+        </label>
+        <label className="archive-filter">الحالة
+          <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+            <option value="all">جميع الحالات</option>
+            <option value="active">ساري</option>
+            <option value="revoked">ملغى</option>
+          </select>
+        </label>
         <span>{filtered.length} قبول</span>
       </div>
       {message && <div className="form-error">{message}</div>}
@@ -659,7 +703,7 @@ function AcceptanceArchive({ initialSearch = false, onBack }) {
                 <td>{item.recipient_name}</td>
                 <td>{item.research_title_ar}</td>
                 <td>{formatArabicDate(item.accepted_on)}</td>
-                <td><button className="view-button" type="button" onClick={() => setSelected(item)}><Eye size={17} /> فتح</button></td>
+                <td><button className="view-button" type="button" onClick={() => { setVersionPreview(null); setSelected(item) }}><Eye size={17} /> فتح</button></td>
               </tr>)}</tbody>
             </table></div>}
       </div>
@@ -712,6 +756,11 @@ function Dashboard({ session }) {
     setView('preview')
   }
 
+  const editAcceptance = (acceptanceDraft) => {
+    setDraft(acceptanceDraft)
+    setView('new')
+  }
+
   const finishIssue = () => {
     setDraft(null)
     setView('dashboard')
@@ -737,7 +786,7 @@ function Dashboard({ session }) {
       <main className="dashboard">
         <header className="topbar">
           <div>
-            <span>منظومة قبولات النشر <em className="version-label">نسخة المعاينة 0.2</em></span>
+            <span>منظومة قبولات النشر <em className="version-label">الإصدار التجريبي 0.10</em></span>
             <small>{session.user.email}</small>
           </div>
           <div className="status-pill"><span /> متصل بقاعدة البيانات</div>
@@ -749,7 +798,7 @@ function Dashboard({ session }) {
           ) : view === 'preview' && draft ? (
             <AcceptancePreview draft={draft} onEdit={() => setView('new')} onConfirmed={finishIssue} />
           ) : view === 'archive' || view === 'search' ? (
-            <AcceptanceArchive key={view} initialSearch={view === 'search'} onBack={() => setView('dashboard')} />
+            <AcceptanceArchive key={view} initialSearch={view === 'search'} onBack={() => setView('dashboard')} onEditRecord={editAcceptance} />
           ) : <>
           <section className="welcome-row">
             <div><p>مرحبًا بك</p><h1>لوحة قبولات النشر</h1></div>
