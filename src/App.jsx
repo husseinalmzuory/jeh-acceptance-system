@@ -303,7 +303,7 @@ function cleanFilenamePart(value) {
 
 function buildPdfFilename(researcherName, researchTitle, acceptanceNumber) {
   const extension = '.pdf'
-  const maxTotalLength = 49
+  const maxTotalLength = 225
   const maxBaseLength = maxTotalLength - extension.length
   const researcher = cleanFilenamePart(researcherName)
   const title = cleanFilenamePart(researchTitle)
