@@ -111,7 +111,6 @@ function NewAcceptanceForm({ onSaved, onCancel }) {
   const today = new Date().toISOString().slice(0, 10)
   const [form, setForm] = useState({
     acceptance_number: '',
-    recipient_affiliation: '',
     research_title_ar: '',
     research_title_en: '',
     received_on: today,
@@ -120,7 +119,7 @@ function NewAcceptanceForm({ onSaved, onCancel }) {
     letter_date: today,
     internal_notes: '',
   })
-  const [researchers, setResearchers] = useState([''])
+  const [researchers, setResearchers] = useState([{ name: '', workplace: '' }])
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
 
@@ -129,12 +128,16 @@ function NewAcceptanceForm({ onSaved, onCancel }) {
     setForm((current) => ({ ...current, [name]: value }))
   }
 
-  const updateResearcher = (index, value) => {
-    setResearchers((current) => current.map((name, itemIndex) => itemIndex === index ? value : name))
+  const updateResearcher = (index, field, value) => {
+    setResearchers((current) => current.map((researcher, itemIndex) => (
+      itemIndex === index ? { ...researcher, [field]: value } : researcher
+    )))
   }
 
   const addResearcher = () => {
-    if (researchers.length < 6) setResearchers((current) => [...current, ''])
+    if (researchers.length < 6) {
+      setResearchers((current) => [...current, { name: '', workplace: '' }])
+    }
   }
 
   const removeResearcher = (index) => {
@@ -146,9 +149,12 @@ function NewAcceptanceForm({ onSaved, onCancel }) {
   const submit = async (event) => {
     event.preventDefault()
     setMessage('')
-    const researcherNames = researchers.map((name) => name.trim()).filter(Boolean)
-    if (researcherNames.length !== researchers.length) {
-      setMessage('أدخل اسمًا لكل باحث مضاف أو احذف الحقل الفارغ.')
+    const normalizedResearchers = researchers.map((researcher) => ({
+      name: researcher.name.trim(),
+      workplace: researcher.workplace.trim(),
+    }))
+    if (normalizedResearchers.some((researcher) => !researcher.name || !researcher.workplace)) {
+      setMessage('يجب إدخال اسم ومكان عمل لكل باحث مضاف.')
       return
     }
     if (form.received_on > form.reviewed_on || form.reviewed_on > form.accepted_on) {
@@ -160,13 +166,12 @@ function NewAcceptanceForm({ onSaved, onCancel }) {
       p_acceptance_number: form.acceptance_number.trim(),
       p_research_title_ar: form.research_title_ar.trim(),
       p_research_title_en: form.research_title_en.trim(),
-      p_recipient_affiliation: form.recipient_affiliation.trim(),
       p_received_on: form.received_on,
       p_reviewed_on: form.reviewed_on,
       p_accepted_on: form.accepted_on,
       p_letter_date: form.letter_date,
       p_internal_notes: form.internal_notes.trim(),
-      p_researchers: researcherNames,
+      p_researchers: normalizedResearchers,
     })
     setSaving(false)
     if (error) {
@@ -201,11 +206,16 @@ function NewAcceptanceForm({ onSaved, onCancel }) {
         <div className="form-section">
           <div className="form-section__title"><span>2</span><div><h2>بيانات الباحثين</h2><p>يمكن إضافة ما يصل إلى ستة باحثين بالترتيب الذي سيظهر في القبول</p></div></div>
           <div className="researchers-list">
-            {researchers.map((name, index) => (
+            {researchers.map((researcher, index) => (
               <div className="researcher-row" key={index}>
-                <label>اسم الباحث {index + 1} مع اللقب العلمي *
-                  <input value={name} onChange={(event) => updateResearcher(index, event.target.value)} placeholder={index === 0 ? 'مثال: أ.م.د. نبراس حسين مهاوش' : 'اسم الباحث المشارك'} required />
-                </label>
+                <div className="researcher-fields">
+                  <label>اسم الباحث {index + 1} مع اللقب العلمي *
+                    <input value={researcher.name} onChange={(event) => updateResearcher(index, 'name', event.target.value)} placeholder={index === 0 ? 'مثال: أ.م.د. نبراس حسين مهاوش' : 'اسم الباحث المشارك'} required />
+                  </label>
+                  <label>مكان عمل الباحث {index + 1} *
+                    <input value={researcher.workplace} onChange={(event) => updateResearcher(index, 'workplace', event.target.value)} placeholder="مثال: كلية الإعلام / جامعة بغداد" required />
+                  </label>
+                </div>
                 {researchers.length > 1 && (
                   <button type="button" className="remove-researcher" onClick={() => removeResearcher(index)} aria-label={`حذف الباحث ${index + 1}`} title="حذف الباحث">
                     <Trash2 size={19} />
@@ -220,9 +230,6 @@ function NewAcceptanceForm({ onSaved, onCancel }) {
             </button>
             <span>{researchers.length} من 6</span>
           </div>
-          <label className="affiliation-field">الجهة *
-            <input name="recipient_affiliation" value={form.recipient_affiliation} onChange={update} placeholder="مثال: كلية الإعلام / جامعة بغداد" required />
-          </label>
         </div>
 
         <div className="form-section">
