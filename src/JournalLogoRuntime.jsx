@@ -34,21 +34,20 @@ export default function JournalLogoRuntime() {
 
     const load = async () => {
       if (!supabase) {
+        currentUrl = fallbackLogo
         schedule()
         return
       }
-      const { data } = await supabase.from('settings').select('value').eq('key', 'journal').maybeSingle()
+
+      const { data, error } = await supabase.rpc('get_journal_logo_path')
       if (!active) return
-      currentUrl = resolveLogoUrl(data?.value?.logo_path)
+      currentUrl = error ? fallbackLogo : resolveLogoUrl(data)
       schedule()
     }
 
     load()
     schedule()
 
-    // React can reuse the same <img> when switching between archive records and
-    // restore its JSX fallback src. Observe src changes as well as new DOM nodes
-    // so the centrally configured journal logo always wins.
     const observer = new MutationObserver((mutations) => {
       const relevant = mutations.some((mutation) => (
         mutation.type === 'childList'
