@@ -30,31 +30,16 @@ function extractContactValue(contact, label, fallback) {
   return separatorIndex >= 0 ? span.textContent.slice(separatorIndex + 1).trim() : fallback
 }
 
-function ensureContactIdentity(contact) {
-  let identity = contact.querySelector('.letter-contact-identity')
-  if (!identity) {
-    identity = document.createElement('div')
-    identity.className = 'letter-contact-identity'
-    const title = contact.querySelector(':scope > strong')
-    if (title) title.insertAdjacentElement('afterend', identity)
-    else contact.prepend(identity)
-  }
-  return identity
-}
-
-function ensureQrContainer(letter) {
-  const contact = letter.querySelector('.letter-contact')
-  if (!contact) return null
-
+function ensureFooterTable(contact) {
   contact.classList.add('letter-contact--qr-layout')
 
-  let container = contact.querySelector('.letter-qr-runtime')
-  if (!container) {
-    container = document.createElement('div')
-    container.className = 'letter-qr-runtime'
-    contact.appendChild(container)
+  let table = contact.querySelector('.letter-verification-table')
+  if (!table) {
+    table = document.createElement('div')
+    table.className = 'letter-verification-table'
+    contact.appendChild(table)
   }
-  return { container, contact }
+  return table
 }
 
 export default function LetterQrRuntime() {
@@ -79,24 +64,22 @@ export default function LetterQrRuntime() {
       const acceptanceNumber = findAcceptanceNumber(letter)
       if (!acceptanceNumber) return
 
-      const result = ensureQrContainer(letter)
-      if (!result) return
-      const { container, contact } = result
+      const contact = letter.querySelector('.letter-contact')
+      if (!contact) return
+
+      const journalName = contact.querySelector(':scope > strong')?.textContent?.trim()
+        || 'مجلة التربية للعلوم الإنسانية'
       const email = extractContactValue(contact, 'البريد الإلكتروني', 'mzuory@gmail.com')
       const phone = extractContactValue(contact, 'الهاتف', '+9647503496549')
-      const identity = ensureContactIdentity(contact)
-      identity.innerHTML = `
-        <span class="letter-contact-email" dir="ltr">${email}</span>
-        <span class="letter-contact-phone" dir="ltr">${phone}</span>
-      `
+      const table = ensureFooterTable(contact)
 
-      if (container.dataset.acceptanceNumber === acceptanceNumber) return
-      container.dataset.acceptanceNumber = acceptanceNumber
-      container.innerHTML = '<span class="letter-qr-loading">جارٍ تجهيز رمز التحقق...</span>'
+      if (table.dataset.acceptanceNumber === acceptanceNumber) return
+      table.dataset.acceptanceNumber = acceptanceNumber
+      table.innerHTML = '<span class="letter-qr-loading">جارٍ تجهيز رمز التحقق...</span>'
 
       const factory = await loadFactory()
       if (disposed || !factory) {
-        container.innerHTML = ''
+        table.innerHTML = ''
         return
       }
 
@@ -106,16 +89,21 @@ export default function LetterQrRuntime() {
         qr.addData(verificationUrl)
         qr.make()
 
-        container.innerHTML = `
-          <div class="letter-qr-image" aria-label="رمز QR للتحقق من القبول">${qr.createSvgTag({ cellSize: 2, margin: 0, scalable: true })}</div>
-          <div class="letter-qr-copy">
-            <strong>امسح الرمز للتحقق من صحة قبول النشر</strong>
-            <span>أو أدخل الرابط للتحقق من صحة القبول:</span>
-            <b class="letter-qr-url" dir="ltr">${shortVerificationUrl(acceptanceNumber)}</b>
+        table.innerHTML = `
+          <div class="letter-footer-journal letter-footer-journal--name">${journalName}</div>
+          <div class="letter-footer-journal letter-footer-journal--email" dir="ltr">${email}</div>
+          <div class="letter-footer-journal letter-footer-journal--phone" dir="ltr">${phone}</div>
+
+          <div class="letter-footer-copy letter-footer-copy--scan">امسح الرمز للتحقق من صحة قبول النشر</div>
+          <div class="letter-footer-copy letter-footer-copy--link-label">للتحقق من القبول بواسطة الرابط</div>
+          <div class="letter-footer-copy letter-footer-copy--url" dir="ltr">${shortVerificationUrl(acceptanceNumber)}</div>
+
+          <div class="letter-qr-image" aria-label="رمز QR للتحقق من القبول">
+            ${qr.createSvgTag({ cellSize: 2, margin: 0, scalable: true })}
           </div>
         `
       } catch {
-        container.innerHTML = ''
+        table.innerHTML = ''
       }
     }
 
