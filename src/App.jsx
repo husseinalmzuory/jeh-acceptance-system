@@ -283,25 +283,32 @@ function AcceptancePreview({ draft, onEdit, onConfirmed }) {
 
   const downloadPdf = async () => {
     if (!letterRef.current) return
-    const { default: html2pdf } = await import('html2pdf.js')
+    const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
+      import('html2canvas'),
+      import('jspdf'),
+    ])
     await document.fonts?.ready
     const safeNumber = form.acceptance_number.replace(/[\\/:*?"<>|\s]+/g, '-')
     letterRef.current.classList.add('pdf-exporting')
     try {
-      await html2pdf().set({
-        margin: 0,
-        filename: `قبول-نشر-${safeNumber}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: {
-          scale: 2,
-          useCORS: true,
-          backgroundColor: '#ffffff',
-          scrollX: 0,
-          scrollY: 0,
-        },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] },
-      }).from(letterRef.current).save()
+      const canvas = await html2canvas(letterRef.current, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        scrollX: 0,
+        scrollY: 0,
+      })
+      const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' })
+      const pageWidth = 210
+      const pageHeight = 297
+      const imageRatio = canvas.width / canvas.height
+      const pageRatio = pageWidth / pageHeight
+      const imageWidth = imageRatio > pageRatio ? pageWidth : pageHeight * imageRatio
+      const imageHeight = imageRatio > pageRatio ? pageWidth / imageRatio : pageHeight
+      const offsetX = (pageWidth - imageWidth) / 2
+      const imageData = canvas.toDataURL('image/jpeg', 0.98)
+      pdf.addImage(imageData, 'JPEG', offsetX, 0, imageWidth, imageHeight, undefined, 'FAST')
+      pdf.save(`قبول-نشر-${safeNumber}.pdf`)
     } finally {
       letterRef.current.classList.remove('pdf-exporting')
     }
@@ -419,8 +426,9 @@ function AcceptancePreview({ draft, onEdit, onConfirmed }) {
 
         <div className="letter-contact">
           <strong>مجلة التربية للعلوم الإنسانية</strong>
-          <span>جامعة الموصل / كلية التربية للعلوم الإنسانية / الموصل – العراق</span>
-          <span>البريد الإلكتروني والموقع الإلكتروني: تُستكمل بيانات التواصل الرسمية</span>
+          <span>جامعة الموصل / كلية التربية للعلوم الإنسانية / الموصل - العراق</span>
+          <span>البريد الإلكتروني: <b dir="ltr">mzuory@gmail.com</b></span>
+          <span>الهاتف: <b dir="ltr">+9647503496549</b></span>
         </div>
       </article>
 
