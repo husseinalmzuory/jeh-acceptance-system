@@ -5,6 +5,7 @@ import VerificationPage from './VerificationPage.jsx'
 import AdminArchiveActions from './AdminArchiveActions.jsx'
 import AdminQuickAccess from './AdminQuickAccess.jsx'
 import AdminToolsGate from './AdminToolsGate.jsx'
+import LetterSettingsRuntime from './LetterSettingsRuntime.jsx'
 import './styles.css'
 import './letter-verification.css'
 
@@ -24,6 +25,7 @@ createRoot(document.getElementById('root')).render(
         <App />
         <AdminArchiveActions />
         <AdminQuickAccess />
+        <LetterSettingsRuntime />
       </>
     )}
   </StrictMode>,
