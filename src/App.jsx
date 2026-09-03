@@ -110,16 +110,19 @@ function StatCard({ icon: Icon, label, value, tone }) {
 function NewAcceptanceForm({ initialDraft, onPreview, onCancel }) {
   const today = new Date().toISOString().slice(0, 10)
   const [form, setForm] = useState(initialDraft?.form ?? {
-    acceptance_number: '',
-    research_title_ar: '',
-    research_title_en: '',
-    received_on: today,
-    reviewed_on: today,
+    acceptance_number: 'تجريبي-001',
+    research_title_ar: 'التحليل المكاني للخدمات التعليمية في مدينة الموصل باستخدام نظم المعلومات الجغرافية',
+    research_title_en: 'Spatial Analysis of Educational Services in Mosul City Using Geographic Information Systems',
+    received_on: '2026-08-20',
+    reviewed_on: '2026-08-28',
     accepted_on: today,
     letter_date: today,
-    internal_notes: '',
+    internal_notes: 'بيانات تجريبية مؤقتة لاختبار شاشة المعاينة.',
   })
-  const [researchers, setResearchers] = useState(initialDraft?.researchers ?? [{ name: '', workplace: '' }])
+  const [researchers, setResearchers] = useState(initialDraft?.researchers ?? [
+    { name: 'أ.م.د. أحمد محمد علي', workplace: 'قسم الجغرافية / كلية التربية للعلوم الإنسانية / جامعة الموصل' },
+    { name: 'م.د. سارة محمود حسن', workplace: 'قسم الجغرافية / كلية الآداب / جامعة بغداد' },
+  ])
   const [message, setMessage] = useState('')
 
   const update = (event) => {
@@ -447,7 +450,7 @@ function Dashboard({ session }) {
       <main className="dashboard">
         <header className="topbar">
           <div>
-            <span>منظومة قبولات النشر</span>
+            <span>منظومة قبولات النشر <em className="version-label">نسخة المعاينة 0.2</em></span>
             <small>{session.user.email}</small>
           </div>
           <div className="status-pill"><span /> متصل بقاعدة البيانات</div>
