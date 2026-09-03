@@ -16,7 +16,9 @@ const defaults = {
 }
 
 function setText(node, value) {
-  if (node && value != null) node.textContent = String(value)
+  if (!node || value == null) return
+  const next = String(value)
+  if (node.textContent !== next) node.textContent = next
 }
 
 function applySettings(letter, settings) {
@@ -30,15 +32,8 @@ function applySettings(letter, settings) {
   setText(arabicHeaderSpans[2], settings.college_ar)
 
   const metaBlocks = letter.querySelectorAll('.letter-meta > div')
-  if (metaBlocks[1]) {
-    metaBlocks[1].replaceChildren(
-      document.createTextNode('رقم الإيداع في دار الكتب والوثائق ببغداد'),
-      document.createElement('br'),
-      Object.assign(document.createElement('strong'), { textContent: settings.deposit_number }),
-    )
-  }
-  const issnStrong = metaBlocks[2]?.querySelector('strong')
-  if (issnStrong) setText(issnStrong, `ISSN ${settings.issn}`)
+  setText(metaBlocks[1]?.querySelector('strong'), settings.deposit_number)
+  setText(metaBlocks[2]?.querySelector('strong'), `ISSN ${settings.issn}`)
 
   const signature = letter.querySelector('.letter-signature')
   if (signature) {
