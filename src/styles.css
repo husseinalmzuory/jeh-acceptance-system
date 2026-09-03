@@ -80,6 +80,7 @@ button { cursor: pointer; }
 .topbar { height: 76px; background: #fff; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 34px; }
 .topbar span, .topbar small { display: block; }
 .topbar span { font-weight: 700; }
+.version-label { display: inline-block; margin-right: 7px; padding: 2px 7px; border-radius: 999px; background: #edf3f7; color: #517087; font-size: 10px; font-style: normal; font-weight: 600; }
 .topbar small { color: var(--muted); margin-top: 3px; direction: ltr; text-align: right; }
 .status-pill { font-size: 13px; color: #25705e; background: #edf8f4; padding: 8px 12px; border-radius: 999px; }
 .status-pill span { width: 7px; height: 7px; border-radius: 50%; background: #36a37f; display: inline-block; margin-left: 6px; }
