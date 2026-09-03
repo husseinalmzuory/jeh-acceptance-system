@@ -6,6 +6,7 @@ import {
   ChevronLeft,
   FileCheck2,
   FilePlus2,
+  Eye,
   LayoutDashboard,
   LoaderCircle,
   LogOut,
@@ -380,6 +381,117 @@ function AcceptancePreview({ draft, onEdit, onConfirmed }) {
   )
 }
 
+function AcceptanceArchive({ initialSearch = false, onBack }) {
+  const [items, setItems] = useState([])
+  const [query, setQuery] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [message, setMessage] = useState('')
+  const [selected, setSelected] = useState(null)
+
+  useEffect(() => {
+    let active = true
+    const loadArchive = async () => {
+      const { data, error } = await supabase
+        .from('acceptances')
+        .select(`
+          id, acceptance_number, research_title_ar, research_title_en,
+          recipient_name, recipient_affiliation, received_on, reviewed_on,
+          accepted_on, letter_date, document_status, internal_notes, created_at,
+          acceptance_researchers (
+            author_order,
+            researchers (name_ar, workplace)
+          )
+        `)
+        .order('created_at', { ascending: false })
+
+      if (!active) return
+      if (error) setMessage('تعذر تحميل الأرشيف. حاول تحديث الصفحة.')
+      setItems(data ?? [])
+      setLoading(false)
+    }
+    loadArchive()
+    return () => { active = false }
+  }, [])
+
+  const filtered = useMemo(() => {
+    const term = query.trim().toLocaleLowerCase('ar')
+    if (!term) return items
+    return items.filter((item) => [
+      item.acceptance_number,
+      item.research_title_ar,
+      item.research_title_en,
+      item.recipient_name,
+      item.recipient_affiliation,
+    ].some((value) => value?.toLocaleLowerCase('ar').includes(term)))
+  }, [items, query])
+
+  if (selected) {
+    const researchers = [...(selected.acceptance_researchers ?? [])]
+      .sort((a, b) => a.author_order - b.author_order)
+      .map((link) => link.researchers)
+      .filter(Boolean)
+
+    return (
+      <section className="archive-page">
+        <div className="page-heading">
+          <div><p>أرشيف القبولات</p><h1>تفاصيل القبول رقم <span dir="ltr">{selected.acceptance_number}</span></h1></div>
+          <button className="outline-button" type="button" onClick={() => setSelected(null)}>العودة إلى الأرشيف</button>
+        </div>
+        <article className="details-card">
+          <div className="details-status">قبول محفوظ <span>ساري</span></div>
+          <dl className="details-grid">
+            <div><dt>رقم القبول</dt><dd dir="ltr">{selected.acceptance_number}</dd></div>
+            <div><dt>تاريخ الكتاب</dt><dd>{formatArabicDate(selected.letter_date)}</dd></div>
+            <div className="details-grid__wide"><dt>عنوان البحث</dt><dd>{selected.research_title_ar}</dd></div>
+            {selected.research_title_en && <div className="details-grid__wide"><dt>العنوان بالإنجليزية</dt><dd dir="ltr">{selected.research_title_en}</dd></div>}
+            <div><dt>تاريخ الاستلام</dt><dd>{formatArabicDate(selected.received_on)}</dd></div>
+            <div><dt>تاريخ المراجعة</dt><dd>{formatArabicDate(selected.reviewed_on)}</dd></div>
+            <div><dt>تاريخ القبول</dt><dd>{formatArabicDate(selected.accepted_on)}</dd></div>
+          </dl>
+          <div className="details-researchers">
+            <h2>{researchers.length === 1 ? 'الباحث' : 'الباحثون'}</h2>
+            {researchers.length ? researchers.map((researcher, index) => (
+              <div key={`${researcher.name_ar}-${index}`}><strong>{researcher.name_ar}</strong><span>{researcher.workplace}</span></div>
+            )) : <p>{selected.recipient_name} — {selected.recipient_affiliation}</p>}
+          </div>
+          {selected.internal_notes && <div className="details-notes"><strong>ملاحظات داخلية</strong><p>{selected.internal_notes}</p></div>}
+        </article>
+      </section>
+    )
+  }
+
+  return (
+    <section className="archive-page">
+      <div className="page-heading">
+        <div><p>القبولات المحفوظة</p><h1>{initialSearch ? 'البحث المتقدم' : 'أرشيف القبولات'}</h1></div>
+        <button className="outline-button" type="button" onClick={onBack}>العودة إلى لوحة التحكم</button>
+      </div>
+      <div className="archive-toolbar">
+        <label className="archive-search">
+          <Search size={20} />
+          <input autoFocus={initialSearch} value={query} onChange={(event) => setQuery(event.target.value)} placeholder="ابحث برقم القبول أو اسم الباحث أو عنوان البحث أو مكان العمل" />
+        </label>
+        <span>{filtered.length} قبول</span>
+      </div>
+      {message && <div className="form-error">{message}</div>}
+      <div className="archive-card">
+        {loading ? <div className="empty-state"><LoaderCircle className="spin" /><p>جارٍ تحميل الأرشيف...</p></div>
+          : filtered.length === 0 ? <div className="empty-state"><Archive size={30} /><h3>لا توجد نتائج</h3><p>غيّر كلمات البحث أو أصدر قبولًا جديدًا.</p></div>
+            : <div className="archive-table-wrap"><table className="archive-table">
+              <thead><tr><th>رقم القبول</th><th>الباحثون</th><th>عنوان البحث</th><th>تاريخ القبول</th><th>التفاصيل</th></tr></thead>
+              <tbody>{filtered.map((item) => <tr key={item.id}>
+                <td dir="ltr">{item.acceptance_number}</td>
+                <td>{item.recipient_name}</td>
+                <td>{item.research_title_ar}</td>
+                <td>{formatArabicDate(item.accepted_on)}</td>
+                <td><button className="view-button" type="button" onClick={() => setSelected(item)}><Eye size={17} /> فتح</button></td>
+              </tr>)}</tbody>
+            </table></div>}
+      </div>
+    </section>
+  )
+}
+
 function Dashboard({ session }) {
   const [view, setView] = useState('dashboard')
   const [count, setCount] = useState(null)
@@ -437,10 +549,10 @@ function Dashboard({ session }) {
       <aside className="sidebar">
         <Brand compact />
         <nav aria-label="التنقل الرئيسي">
-          <button className="nav-item nav-item--active"><LayoutDashboard size={20} /> لوحة التحكم</button>
+          <button className={`nav-item ${view === 'dashboard' ? 'nav-item--active' : ''}`} onClick={() => setView('dashboard')}><LayoutDashboard size={20} /> لوحة التحكم</button>
           <button className={`nav-item ${view === 'new' || view === 'preview' ? 'nav-item--active' : ''}`} onClick={openNew}><FilePlus2 size={20} /> إصدار قبول جديد</button>
-          <button className="nav-item"><Archive size={20} /> أرشيف القبولات</button>
-          <button className="nav-item"><Search size={20} /> البحث المتقدم</button>
+          <button className={`nav-item ${view === 'archive' ? 'nav-item--active' : ''}`} onClick={() => setView('archive')}><Archive size={20} /> أرشيف القبولات</button>
+          <button className={`nav-item ${view === 'search' ? 'nav-item--active' : ''}`} onClick={() => setView('search')}><Search size={20} /> البحث المتقدم</button>
         </nav>
         <button className="logout-button" onClick={() => supabase.auth.signOut()}>
           <LogOut size={19} /> تسجيل الخروج
@@ -461,6 +573,8 @@ function Dashboard({ session }) {
             <NewAcceptanceForm initialDraft={draft} onCancel={() => setView('dashboard')} onPreview={showPreview} />
           ) : view === 'preview' && draft ? (
             <AcceptancePreview draft={draft} onEdit={() => setView('new')} onConfirmed={finishIssue} />
+          ) : view === 'archive' || view === 'search' ? (
+            <AcceptanceArchive key={view} initialSearch={view === 'search'} onBack={() => setView('dashboard')} />
           ) : <>
           <section className="welcome-row">
             <div><p>مرحبًا بك</p><h1>لوحة قبولات النشر</h1></div>
@@ -476,7 +590,7 @@ function Dashboard({ session }) {
           <section className="content-card">
             <div className="content-card__header">
               <div><h2>أحدث القبولات</h2><p>آخر الكتب التي أضيفت إلى الأرشيف</p></div>
-              <button className="text-button">عرض الأرشيف <ChevronLeft size={17} /></button>
+              <button className="text-button" onClick={() => setView('archive')}>عرض الأرشيف <ChevronLeft size={17} /></button>
             </div>
 
             {loading ? (
