@@ -16,7 +16,7 @@
 
 * { box-sizing: border-box; }
 body { margin: 0; min-width: 320px; min-height: 100vh; }
-button, input { font: inherit; }
+button, input, textarea { font: inherit; }
 button { cursor: pointer; }
 
 .brand { display: flex; align-items: center; gap: 15px; }
@@ -107,6 +107,27 @@ button { cursor: pointer; }
 .empty-state h3 { color: #27384a; margin: 17px 0 7px; }
 .empty-state p { margin-bottom: 18px; }
 .secondary-button { background: #edf3f7; color: var(--navy); padding: 11px 16px; }
+.outline-button { border: 1px solid #cbd7e0; background: #fff; color: #344a5f; border-radius: 10px; padding: 11px 17px; font-weight: 600; }
+.outline-button:hover { background: #f5f8fa; }
+.page-heading { display: flex; justify-content: space-between; align-items: end; margin-bottom: 24px; }
+.page-heading p, .page-heading h1 { margin: 0; }
+.page-heading p { color: var(--muted); margin-bottom: 4px; }
+.page-heading h1 { font-size: 29px; }
+.acceptance-form { display: grid; gap: 18px; }
+.form-section { background: #fff; border: 1px solid var(--border); border-radius: 13px; padding: 23px 25px; }
+.form-section__title { display: flex; gap: 13px; align-items: center; padding-bottom: 18px; margin-bottom: 20px; border-bottom: 1px solid #edf1f4; }
+.form-section__title > span { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 10px; background: #e8f1f7; color: var(--navy); font-weight: 800; }
+.form-section__title h2, .form-section__title p { margin: 0; }
+.form-section__title h2 { font-size: 18px; }
+.form-section__title p { color: var(--muted); font-size: 13px; margin-top: 3px; }
+.form-grid { display: grid; gap: 18px; }
+.form-grid--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.form-grid--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.acceptance-form label { display: block; color: #33475a; font-size: 14px; font-weight: 600; }
+.acceptance-form input, .acceptance-form textarea { width: 100%; margin-top: 8px; border: 1px solid #cfd9e1; border-radius: 9px; padding: 12px 13px; outline: none; background: #fff; color: #172536; resize: vertical; }
+.acceptance-form input:focus, .acceptance-form textarea:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgb(27 112 170 / 10%); }
+.dates-row { margin-top: 18px; }
+.form-actions { display: flex; justify-content: flex-end; gap: 11px; padding: 4px 0 30px; }
 .acceptance-list article { display: grid; grid-template-columns: 120px 1fr 120px; gap: 20px; align-items: center; padding: 17px 24px; border-bottom: 1px solid #edf1f4; }
 .acceptance-number { font-weight: 700; color: var(--blue); direction: ltr; text-align: right; }
 .acceptance-list strong, .acceptance-list span { display: block; }
@@ -130,6 +151,7 @@ button { cursor: pointer; }
   .nav-item, .logout-button { justify-content: center; }
   .logout-button { font-size: 0; }
   .stats-grid { grid-template-columns: 1fr; }
+  .form-grid--3 { grid-template-columns: 1fr 1fr; }
 }
 
 @media (max-width: 600px) {
@@ -142,4 +164,7 @@ button { cursor: pointer; }
   .welcome-row .primary-button { width: 100%; }
   .content-card__header { align-items: flex-start; gap: 15px; }
   .acceptance-list article { grid-template-columns: 1fr; gap: 5px; }
+  .form-grid--2, .form-grid--3 { grid-template-columns: 1fr; }
+  .page-heading { align-items: stretch; flex-direction: column; gap: 15px; }
+  .form-section { padding: 19px 17px; }
 }
