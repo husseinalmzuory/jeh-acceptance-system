@@ -44,7 +44,6 @@
 .letter-footer-journal--email {
   grid-row: 2;
 
-  text-align: left;
   font-size: 8.8px;
   font-weight: 650;
   color: #475569;
@@ -53,7 +52,7 @@
 .letter-footer-journal--phone {
   grid-row: 3;
 
-  text-align: left;
+
   font-size: 9.4px;
   font-weight: 800;
   color: #111827;
