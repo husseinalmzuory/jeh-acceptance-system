@@ -27,7 +27,7 @@
 .letter-footer-journal {
   grid-column: 1;
   direction: rtl;
-  text-align: right;
+  text-align: center;
   justify-self: stretch;
   align-self: center;
   width: 100%;
