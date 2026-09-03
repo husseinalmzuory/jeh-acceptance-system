@@ -11,6 +11,7 @@ import AttachmentManagerRuntime from './AttachmentManagerRuntime.jsx'
 import LetterSettingsRuntime from './LetterSettingsRuntime.jsx'
 import LetterQrRuntime from './LetterQrRuntime.jsx'
 import ProductionRuntime from './ProductionRuntime.jsx'
+import RevokedLetterRuntime from './RevokedLetterRuntime.jsx'
 import './styles.css'
 import './letter-verification.css'
 
@@ -42,6 +43,7 @@ createRoot(document.getElementById('root')).render(
         <LetterSettingsRuntime />
         <LetterQrRuntime />
         <ProductionRuntime />
+        <RevokedLetterRuntime />
       </>
     )}
   </StrictMode>,
