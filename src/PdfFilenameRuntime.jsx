@@ -11,7 +11,8 @@ function cleanPart(value) {
 }
 
 function buildFilename() {
-  const letter = document.querySelector('.letter-preview')
+  const letters = [...document.querySelectorAll('.letter-preview')]
+  const letter = letters.find((item) => item.offsetParent !== null) ?? letters.at(-1)
   if (!letter) return null
 
   const researcher = cleanPart(letter.querySelector('.recipient-row strong')?.textContent)
@@ -21,8 +22,6 @@ function buildFilename() {
   const joined = [researcher, title].filter(Boolean).join(' - ')
   const maxBaseLength = MAX_TOTAL_LENGTH - EXTENSION.length
   let base = joined.slice(0, maxBaseLength).trim()
-
-  // Avoid ending the filename with punctuation or a dangling separator after truncation.
   base = base.replace(/[\s.\-_–—]+$/g, '').trim()
   if (!base) base = 'قبول نشر'
 
@@ -31,23 +30,35 @@ function buildFilename() {
 
 export default function PdfFilenameRuntime() {
   useEffect(() => {
-    const originalClick = HTMLAnchorElement.prototype.click
+    let active = true
+    let restore = null
 
-    HTMLAnchorElement.prototype.click = function patchedClick(...args) {
+    const patch = async () => {
       try {
-        const currentDownload = this.getAttribute('download') || ''
-        if (/\.pdf$/i.test(currentDownload)) {
-          const filename = buildFilename()
-          if (filename) this.setAttribute('download', filename)
+        const { jsPDF } = await import('jspdf')
+        if (!active || !jsPDF?.API?.save || jsPDF.API.save.__jehFilenamePatched) return
+
+        const originalSave = jsPDF.API.save
+        function patchedSave(filename, options) {
+          const customFilename = buildFilename()
+          return originalSave.call(this, customFilename || filename, options)
+        }
+        patchedSave.__jehFilenamePatched = true
+        jsPDF.API.save = patchedSave
+
+        restore = () => {
+          if (jsPDF.API.save === patchedSave) jsPDF.API.save = originalSave
         }
       } catch {
-        // Keep the original download behavior if filename customization fails.
+        // If jsPDF cannot be preloaded, the normal PDF flow remains untouched.
       }
-      return originalClick.apply(this, args)
     }
 
+    patch()
+
     return () => {
-      HTMLAnchorElement.prototype.click = originalClick
+      active = false
+      restore?.()
     }
   }, [])
 
