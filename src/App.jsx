@@ -318,7 +318,7 @@ function AcceptancePreview({ draft, onEdit, onConfirmed }) {
             <span>University of Mosul</span>
             <span>College of Education for Humanities</span>
           </div>
-          <div className="letter-seal">JEH</div>
+          <img className="letter-logo" src={`${import.meta.env.BASE_URL}jeh-official-logo.png`} alt="شعار كلية التربية للعلوم الإنسانية ومجلة التربية للعلوم الإنسانية" />
           <div className="letter-header__arabic">
             <strong>جمهورية العراق</strong>
             <span>وزارة التعليم العالي والبحث العلمي</span>
@@ -358,14 +358,21 @@ function AcceptancePreview({ draft, onEdit, onConfirmed }) {
         </div>
 
         <footer className="letter-footer">
-          <div className="qr-placeholder"><span>QR</span><small>رمز التحقق</small></div>
-          <div className="letter-signature"><strong>رئيس هيئة التحرير</strong><span>مجلة التربية للعلوم الإنسانية</span></div>
+          <div className="letter-dates">
+            <span><strong>تاريخ الاستلام:</strong> {formatArabicDate(form.received_on)}</span>
+            <span><strong>تاريخ المراجعة:</strong> {formatArabicDate(form.reviewed_on)}</span>
+            <span><strong>تاريخ القبول:</strong> {formatArabicDate(form.accepted_on)}</span>
+          </div>
+          <div className="letter-signature">
+            <strong>أ.د. إبراهيم محمد محمود الحمداني</strong>
+            <span>رئيس هيئة التحرير</span>
+          </div>
         </footer>
 
-        <div className="letter-dates">
-          <span><strong>تاريخ الاستلام:</strong> {formatArabicDate(form.received_on)}</span>
-          <span><strong>تاريخ المراجعة:</strong> {formatArabicDate(form.reviewed_on)}</span>
-          <span><strong>تاريخ القبول:</strong> {formatArabicDate(form.accepted_on)}</span>
+        <div className="letter-contact">
+          <strong>مجلة التربية للعلوم الإنسانية</strong>
+          <span>جامعة الموصل / كلية التربية للعلوم الإنسانية / الموصل – العراق</span>
+          <span>البريد الإلكتروني والموقع الإلكتروني: تُستكمل بيانات التواصل الرسمية</span>
         </div>
       </article>
 
