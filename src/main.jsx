@@ -5,6 +5,7 @@ import VerificationPage from './VerificationPage.jsx'
 import AdminArchiveActions from './AdminArchiveActions.jsx'
 import AdminQuickAccess from './AdminQuickAccess.jsx'
 import AdminToolsGate from './AdminToolsGate.jsx'
+import AdvancedArchiveGate from './AdvancedArchiveGate.jsx'
 import LetterSettingsRuntime from './LetterSettingsRuntime.jsx'
 import LetterQrRuntime from './LetterQrRuntime.jsx'
 import './styles.css'
@@ -14,11 +15,14 @@ const params = new URLSearchParams(window.location.search)
 const verificationToken = params.get('verify')
 const showVerificationPortal = params.has('verification')
 const showAdminTools = params.has('admin')
+const showAdvancedArchive = params.has('advancedArchive')
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     {verificationToken || showVerificationPortal ? (
       <VerificationPage token={verificationToken} />
+    ) : showAdvancedArchive ? (
+      <AdvancedArchiveGate />
     ) : showAdminTools ? (
       <AdminToolsGate />
     ) : (
