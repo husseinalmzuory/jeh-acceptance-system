@@ -22,12 +22,24 @@ function findAcceptanceNumber(letter) {
   return numberNode?.textContent?.trim() ?? ''
 }
 
-function extractEmail(contact) {
-  const emailSpan = [...contact.querySelectorAll(':scope > span')]
-    .find((node) => node.textContent?.includes('البريد الإلكتروني'))
-  const raw = emailSpan?.textContent ?? 'البريد الإلكتروني: mzuory@gmail.com'
-  const match = raw.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)
-  return match?.[0] ?? 'mzuory@gmail.com'
+function extractContactValue(contact, label, fallback) {
+  const span = [...contact.querySelectorAll(':scope > span')]
+    .find((node) => node.textContent?.includes(label))
+  if (!span) return fallback
+  const separatorIndex = span.textContent.indexOf(':')
+  return separatorIndex >= 0 ? span.textContent.slice(separatorIndex + 1).trim() : fallback
+}
+
+function ensureContactIdentity(contact) {
+  let identity = contact.querySelector('.letter-contact-identity')
+  if (!identity) {
+    identity = document.createElement('div')
+    identity.className = 'letter-contact-identity'
+    const title = contact.querySelector(':scope > strong')
+    if (title) title.insertAdjacentElement('afterend', identity)
+    else contact.prepend(identity)
+  }
+  return identity
 }
 
 function ensureQrContainer(letter) {
@@ -70,7 +82,13 @@ export default function LetterQrRuntime() {
       const result = ensureQrContainer(letter)
       if (!result) return
       const { container, contact } = result
-      const email = extractEmail(contact)
+      const email = extractContactValue(contact, 'البريد الإلكتروني', 'mzuory@gmail.com')
+      const phone = extractContactValue(contact, 'الهاتف', '+9647503496549')
+      const identity = ensureContactIdentity(contact)
+      identity.innerHTML = `
+        <span class="letter-contact-email" dir="ltr">${email}</span>
+        <span class="letter-contact-phone" dir="ltr">${phone}</span>
+      `
 
       if (container.dataset.acceptanceNumber === acceptanceNumber) return
       container.dataset.acceptanceNumber = acceptanceNumber
@@ -91,7 +109,6 @@ export default function LetterQrRuntime() {
         container.innerHTML = `
           <div class="letter-qr-image" aria-label="رمز QR للتحقق من القبول">${qr.createSvgTag({ cellSize: 2, margin: 0, scalable: true })}</div>
           <div class="letter-qr-copy">
-            <div class="letter-qr-email" dir="ltr">${email}</div>
             <strong>امسح الرمز للتحقق من صحة قبول النشر</strong>
             <span>أو أدخل الرابط للتحقق من صحة القبول:</span>
             <b class="letter-qr-url" dir="ltr">${shortVerificationUrl(acceptanceNumber)}</b>
