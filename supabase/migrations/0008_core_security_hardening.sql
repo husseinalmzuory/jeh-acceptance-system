@@ -38,6 +38,18 @@ before update on public.acceptances
 for each row
 execute function public.prevent_revoked_acceptance_mutation();
 
+-- Keep attachment metadata in the same audit trail as acceptance data.
+drop trigger if exists attachments_audit on public.attachments;
+create trigger attachments_audit
+after insert or update or delete on public.attachments
+for each row execute function public.write_audit_log();
+
+-- settings.updated_at should reflect every administrative settings save.
+drop trigger if exists settings_set_updated_at on public.settings;
+create trigger settings_set_updated_at
+before update on public.settings
+for each row execute function public.set_updated_at();
+
 -- Keep read access for the authenticated journal account. Public visitors
 -- continue to see only the fields returned by the verification RPCs.
 comment on function public.prevent_revoked_acceptance_mutation() is
