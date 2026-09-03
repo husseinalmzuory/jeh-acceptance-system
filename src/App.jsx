@@ -9,8 +9,10 @@ import {
   LayoutDashboard,
   LoaderCircle,
   LogOut,
+  Plus,
   Search,
   ShieldCheck,
+  Trash2,
 } from 'lucide-react'
 import { isSupabaseConfigured, supabase } from './lib/supabase'
 
@@ -109,16 +111,16 @@ function NewAcceptanceForm({ onSaved, onCancel }) {
   const today = new Date().toISOString().slice(0, 10)
   const [form, setForm] = useState({
     acceptance_number: '',
-    ojs_submission_id: '',
-    recipient_name: '',
     recipient_affiliation: '',
     research_title_ar: '',
     research_title_en: '',
     received_on: today,
+    reviewed_on: today,
     accepted_on: today,
     letter_date: today,
     internal_notes: '',
   })
+  const [researchers, setResearchers] = useState([''])
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
 
@@ -127,22 +129,45 @@ function NewAcceptanceForm({ onSaved, onCancel }) {
     setForm((current) => ({ ...current, [name]: value }))
   }
 
+  const updateResearcher = (index, value) => {
+    setResearchers((current) => current.map((name, itemIndex) => itemIndex === index ? value : name))
+  }
+
+  const addResearcher = () => {
+    if (researchers.length < 6) setResearchers((current) => [...current, ''])
+  }
+
+  const removeResearcher = (index) => {
+    if (researchers.length > 1) {
+      setResearchers((current) => current.filter((_name, itemIndex) => itemIndex !== index))
+    }
+  }
+
   const submit = async (event) => {
     event.preventDefault()
     setMessage('')
-    if (form.received_on > form.accepted_on) {
-      setMessage('تاريخ الاستلام يجب أن يكون قبل تاريخ القبول أو مساويًا له.')
+    const researcherNames = researchers.map((name) => name.trim()).filter(Boolean)
+    if (researcherNames.length !== researchers.length) {
+      setMessage('أدخل اسمًا لكل باحث مضاف أو احذف الحقل الفارغ.')
+      return
+    }
+    if (form.received_on > form.reviewed_on || form.reviewed_on > form.accepted_on) {
+      setMessage('يجب أن يكون ترتيب التواريخ: الاستلام، ثم المراجعة، ثم القبول.')
       return
     }
     setSaving(true)
-    const payload = Object.fromEntries(
-      Object.entries(form).map(([key, value]) => [key, value.trim?.() || value || null]),
-    )
-    const { data, error } = await supabase
-      .from('acceptances')
-      .insert(payload)
-      .select('id')
-      .single()
+    const { data, error } = await supabase.rpc('create_acceptance', {
+      p_acceptance_number: form.acceptance_number.trim(),
+      p_research_title_ar: form.research_title_ar.trim(),
+      p_research_title_en: form.research_title_en.trim(),
+      p_recipient_affiliation: form.recipient_affiliation.trim(),
+      p_received_on: form.received_on,
+      p_reviewed_on: form.reviewed_on,
+      p_accepted_on: form.accepted_on,
+      p_letter_date: form.letter_date,
+      p_internal_notes: form.internal_notes.trim(),
+      p_researchers: researcherNames,
+    })
     setSaving(false)
     if (error) {
       setMessage(error.code === '23505'
@@ -150,7 +175,7 @@ function NewAcceptanceForm({ onSaved, onCancel }) {
         : 'تعذر حفظ القبول. تحقق من البيانات وحاول مرة أخرى.')
       return
     }
-    onSaved(data.id)
+    onSaved(data)
   }
 
   return (
@@ -163,29 +188,41 @@ function NewAcceptanceForm({ onSaved, onCancel }) {
       <form className="acceptance-form" onSubmit={submit}>
         <div className="form-section">
           <div className="form-section__title"><span>1</span><div><h2>بيانات الكتاب</h2><p>رقم وتاريخ كتاب القبول الرسمي</p></div></div>
-          <div className="form-grid form-grid--3">
+          <div className="form-grid form-grid--2">
             <label>رقم القبول الرسمي *
               <input name="acceptance_number" value={form.acceptance_number} onChange={update} placeholder="مثال: 157/8" required />
             </label>
             <label>تاريخ الكتاب *
               <input type="date" name="letter_date" value={form.letter_date} onChange={update} required />
             </label>
-            <label>رقم البحث في OJS
-              <input name="ojs_submission_id" value={form.ojs_submission_id} onChange={update} placeholder="اختياري" />
-            </label>
           </div>
         </div>
 
         <div className="form-section">
-          <div className="form-section__title"><span>2</span><div><h2>بيانات الباحث</h2><p>الاسم والجهة كما سيظهران في كتاب القبول</p></div></div>
-          <div className="form-grid form-grid--2">
-            <label>اسم الباحث مع اللقب العلمي *
-              <input name="recipient_name" value={form.recipient_name} onChange={update} placeholder="مثال: أ.م.د. نبراس حسين مهاوش" required />
-            </label>
-            <label>الجهة *
-              <input name="recipient_affiliation" value={form.recipient_affiliation} onChange={update} placeholder="مثال: كلية الإعلام / جامعة بغداد" required />
-            </label>
+          <div className="form-section__title"><span>2</span><div><h2>بيانات الباحثين</h2><p>يمكن إضافة ما يصل إلى ستة باحثين بالترتيب الذي سيظهر في القبول</p></div></div>
+          <div className="researchers-list">
+            {researchers.map((name, index) => (
+              <div className="researcher-row" key={index}>
+                <label>اسم الباحث {index + 1} مع اللقب العلمي *
+                  <input value={name} onChange={(event) => updateResearcher(index, event.target.value)} placeholder={index === 0 ? 'مثال: أ.م.د. نبراس حسين مهاوش' : 'اسم الباحث المشارك'} required />
+                </label>
+                {researchers.length > 1 && (
+                  <button type="button" className="remove-researcher" onClick={() => removeResearcher(index)} aria-label={`حذف الباحث ${index + 1}`} title="حذف الباحث">
+                    <Trash2 size={19} />
+                  </button>
+                )}
+              </div>
+            ))}
           </div>
+          <div className="researcher-tools">
+            <button type="button" className="add-researcher" onClick={addResearcher} disabled={researchers.length >= 6}>
+              <Plus size={18} /> إضافة باحث
+            </button>
+            <span>{researchers.length} من 6</span>
+          </div>
+          <label className="affiliation-field">الجهة *
+            <input name="recipient_affiliation" value={form.recipient_affiliation} onChange={update} placeholder="مثال: كلية الإعلام / جامعة بغداد" required />
+          </label>
         </div>
 
         <div className="form-section">
@@ -198,9 +235,12 @@ function NewAcceptanceForm({ onSaved, onCancel }) {
               <textarea name="research_title_en" value={form.research_title_en} onChange={update} rows="2" dir="ltr" />
             </label>
           </div>
-          <div className="form-grid form-grid--2 dates-row">
+          <div className="form-grid form-grid--3 dates-row">
             <label>تاريخ الاستلام *
               <input type="date" name="received_on" value={form.received_on} onChange={update} required />
+            </label>
+            <label>تاريخ المراجعة *
+              <input type="date" name="reviewed_on" value={form.reviewed_on} onChange={update} required />
             </label>
             <label>تاريخ القبول *
               <input type="date" name="accepted_on" value={form.accepted_on} onChange={update} required />
