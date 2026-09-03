@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 
-const MAX_TOTAL_LENGTH = 49
+const MAX_TOTAL_LENGTH = 225
 const EXTENSION = '.pdf'
 
 function cleanPart(value) {
