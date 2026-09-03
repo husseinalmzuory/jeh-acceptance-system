@@ -294,14 +294,34 @@ function formatArabicDate(value) {
   return `${day}/${month}/${year}`
 }
 
-async function exportAcceptancePdf(element, acceptanceNumber) {
+function cleanFilenamePart(value) {
+  return String(value ?? '')
+    .replace(/[\\/:*?"<>|]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function buildPdfFilename(researcherName, researchTitle, acceptanceNumber) {
+  const extension = '.pdf'
+  const maxTotalLength = 49
+  const maxBaseLength = maxTotalLength - extension.length
+  const researcher = cleanFilenamePart(researcherName)
+  const title = cleanFilenamePart(researchTitle)
+  const fallback = cleanFilenamePart(acceptanceNumber) || 'قبول نشر'
+  let base = [researcher, title].filter(Boolean).join(' - ') || fallback
+  base = base.slice(0, maxBaseLength).replace(/[\s.\-_–—]+$/g, '').trim()
+  if (!base) base = fallback.slice(0, maxBaseLength) || 'قبول نشر'
+  return `${base.slice(0, maxBaseLength)}${extension}`
+}
+
+async function exportAcceptancePdf(element, acceptanceNumber, researcherName, researchTitle) {
   if (!element) return
   const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
     import('html2canvas'),
     import('jspdf'),
   ])
   await document.fonts?.ready
-  const safeNumber = acceptanceNumber.replace(/[\\/:*?"<>|\s]+/g, '-')
+  const filename = buildPdfFilename(researcherName, researchTitle, acceptanceNumber)
   element.classList.add('pdf-exporting')
   try {
     const canvas = await html2canvas(element, {
@@ -320,7 +340,7 @@ async function exportAcceptancePdf(element, acceptanceNumber) {
     const imageHeight = imageRatio > pageRatio ? pageWidth / imageRatio : pageHeight
     const offsetX = (pageWidth - imageWidth) / 2
     pdf.addImage(canvas.toDataURL('image/jpeg', 0.98), 'JPEG', offsetX, 0, imageWidth, imageHeight, undefined, 'FAST')
-    pdf.save(`قبول-نشر-${safeNumber}.pdf`)
+    pdf.save(filename)
   } finally {
     element.classList.remove('pdf-exporting')
   }
@@ -406,7 +426,12 @@ function AcceptancePreview({ draft, onEdit, onConfirmed }) {
   const isEditing = mode === 'edit'
 
   const downloadPdf = async () => {
-    await exportAcceptancePdf(letterRef.current, form.acceptance_number)
+    await exportAcceptancePdf(
+      letterRef.current,
+      form.acceptance_number,
+      researchers[0]?.name,
+      form.research_title_ar,
+    )
   }
 
   const confirmIssue = async () => {
@@ -580,7 +605,12 @@ function AcceptanceArchive({ initialSearch = false, onBack, onEditRecord }) {
       setDownloading(true)
       setMessage('')
       try {
-        await exportAcceptancePdf(archiveLetterRef.current, displayedForm.acceptance_number)
+        await exportAcceptancePdf(
+          archiveLetterRef.current,
+          displayedForm.acceptance_number,
+          displayedResearchers[0]?.name,
+          displayedForm.research_title_ar,
+        )
       } catch {
         setMessage('تعذر إنشاء ملف PDF. حاول مرة أخرى أو استخدم زر الطباعة.')
       }
