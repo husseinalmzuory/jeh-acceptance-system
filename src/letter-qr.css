@@ -43,7 +43,7 @@
 
 .letter-footer-journal--email {
   grid-row: 2;
-  direction: ltr;
+
   text-align: left;
   font-size: 8.8px;
   font-weight: 650;
@@ -52,7 +52,7 @@
 
 .letter-footer-journal--phone {
   grid-row: 3;
-  direction: ltr;
+
   text-align: left;
   font-size: 9.4px;
   font-weight: 800;
