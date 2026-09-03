@@ -107,9 +107,9 @@ function StatCard({ icon: Icon, label, value, tone }) {
   )
 }
 
-function NewAcceptanceForm({ onSaved, onCancel }) {
+function NewAcceptanceForm({ initialDraft, onPreview, onCancel }) {
   const today = new Date().toISOString().slice(0, 10)
-  const [form, setForm] = useState({
+  const [form, setForm] = useState(initialDraft?.form ?? {
     acceptance_number: '',
     research_title_ar: '',
     research_title_en: '',
@@ -119,8 +119,7 @@ function NewAcceptanceForm({ onSaved, onCancel }) {
     letter_date: today,
     internal_notes: '',
   })
-  const [researchers, setResearchers] = useState([{ name: '', workplace: '' }])
-  const [saving, setSaving] = useState(false)
+  const [researchers, setResearchers] = useState(initialDraft?.researchers ?? [{ name: '', workplace: '' }])
   const [message, setMessage] = useState('')
 
   const update = (event) => {
@@ -146,7 +145,7 @@ function NewAcceptanceForm({ onSaved, onCancel }) {
     }
   }
 
-  const submit = async (event) => {
+  const submit = (event) => {
     event.preventDefault()
     setMessage('')
     const normalizedResearchers = researchers.map((researcher) => ({
@@ -161,26 +160,16 @@ function NewAcceptanceForm({ onSaved, onCancel }) {
       setMessage('يجب أن يكون ترتيب التواريخ: الاستلام، ثم المراجعة، ثم القبول.')
       return
     }
-    setSaving(true)
-    const { data, error } = await supabase.rpc('create_acceptance', {
-      p_acceptance_number: form.acceptance_number.trim(),
-      p_research_title_ar: form.research_title_ar.trim(),
-      p_research_title_en: form.research_title_en.trim(),
-      p_received_on: form.received_on,
-      p_reviewed_on: form.reviewed_on,
-      p_accepted_on: form.accepted_on,
-      p_letter_date: form.letter_date,
-      p_internal_notes: form.internal_notes.trim(),
-      p_researchers: normalizedResearchers,
+    onPreview({
+      form: {
+        ...form,
+        acceptance_number: form.acceptance_number.trim(),
+        research_title_ar: form.research_title_ar.trim(),
+        research_title_en: form.research_title_en.trim(),
+        internal_notes: form.internal_notes.trim(),
+      },
+      researchers: normalizedResearchers,
     })
-    setSaving(false)
-    if (error) {
-      setMessage(error.code === '23505'
-        ? 'رقم القبول مستخدم سابقًا. أدخل رقمًا آخر.'
-        : 'تعذر حفظ القبول. تحقق من البيانات وحاول مرة أخرى.')
-      return
-    }
-    onSaved(data)
   }
 
   return (
@@ -263,12 +252,127 @@ function NewAcceptanceForm({ onSaved, onCancel }) {
         {message && <div className="form-error" role="alert">{message}</div>}
         <div className="form-actions">
           <button className="outline-button" type="button" onClick={onCancel}>إلغاء</button>
-          <button className="primary-button" disabled={saving}>
-            {saving ? <LoaderCircle className="spin" size={20} /> : <FileCheck2 size={20} />}
-            {saving ? 'جارٍ الحفظ...' : 'حفظ ومتابعة المعاينة'}
+          <button className="primary-button">
+            <FileCheck2 size={20} />
+            معاينة كتاب القبول
           </button>
         </div>
       </form>
+    </section>
+  )
+}
+
+function formatArabicDate(value) {
+  if (!value) return '—'
+  const [year, month, day] = value.split('-')
+  return `${day}/${month}/${year}`
+}
+
+function AcceptancePreview({ draft, onEdit, onConfirmed }) {
+  const [saving, setSaving] = useState(false)
+  const [message, setMessage] = useState('')
+  const { form, researchers } = draft
+
+  const confirmIssue = async () => {
+    setSaving(true)
+    setMessage('')
+    const { data, error } = await supabase.rpc('create_acceptance', {
+      p_acceptance_number: form.acceptance_number,
+      p_research_title_ar: form.research_title_ar,
+      p_research_title_en: form.research_title_en,
+      p_received_on: form.received_on,
+      p_reviewed_on: form.reviewed_on,
+      p_accepted_on: form.accepted_on,
+      p_letter_date: form.letter_date,
+      p_internal_notes: form.internal_notes,
+      p_researchers: researchers,
+    })
+    setSaving(false)
+    if (error) {
+      setMessage(error.code === '23505'
+        ? 'رقم القبول مستخدم سابقًا. ارجع للتعديل وأدخل رقمًا آخر.'
+        : 'تعذر حفظ القبول. تحقق من الاتصال وحاول مرة أخرى.')
+      return
+    }
+    onConfirmed(data)
+  }
+
+  return (
+    <section className="preview-page">
+      <div className="page-heading">
+        <div><p>الخطوة الأخيرة</p><h1>معاينة كتاب القبول</h1></div>
+        <button className="outline-button" type="button" onClick={onEdit}>الرجوع لتعديل البيانات</button>
+      </div>
+
+      <div className="preview-notice">راجع الأسماء وأماكن العمل والعنوان والتواريخ. لن يُحفظ القبول قبل الضغط على «إصدار وحفظ القبول».</div>
+
+      <article className="letter-preview">
+        <header className="letter-header">
+          <div className="letter-header__english" dir="ltr">
+            <strong>Republic of Iraq</strong>
+            <span>Ministry of Higher Education</span>
+            <span>University of Mosul</span>
+            <span>College of Education for Humanities</span>
+          </div>
+          <div className="letter-seal">JEH</div>
+          <div className="letter-header__arabic">
+            <strong>جمهورية العراق</strong>
+            <span>وزارة التعليم العالي والبحث العلمي</span>
+            <span>جامعة الموصل</span>
+            <span>كلية التربية للعلوم الإنسانية</span>
+          </div>
+        </header>
+
+        <div className="journal-heading">
+          <h2>مجلة التربية للعلوم الإنسانية</h2>
+          <p>مجلة أكاديمية فصلية محكمة تأسست سنة 2021م</p>
+        </div>
+
+        <div className="letter-meta">
+          <div><strong>العدد:</strong> <span dir="ltr">{form.acceptance_number}</span><br /><strong>التاريخ:</strong> <span dir="ltr">{formatArabicDate(form.letter_date)}</span></div>
+          <div>رقم الإيداع في دار الكتب والوثائق ببغداد<br /><strong>2425 لسنة 2020</strong></div>
+          <div dir="ltr"><strong>ISSN 2710-124X</strong></div>
+        </div>
+
+        <div className="letter-body">
+          <h3>م/ قبول نشر بحث</h3>
+          <p className="recipient-label">{researchers.length === 1 ? 'إلى الباحث:' : 'إلى الباحثين:'}</p>
+          <div className="recipient-table">
+            {researchers.map((researcher, index) => (
+              <div className="recipient-row" key={`${researcher.name}-${index}`}>
+                <strong>{researcher.name}</strong>
+                <span>{researcher.workplace}</span>
+              </div>
+            ))}
+          </div>
+          <p className="greeting">تحية طيبة...</p>
+          <p>نود إعلامكم بقبول نشر بحثكم الموسوم:</p>
+          <p className="research-title">{form.research_title_ar}</p>
+          {form.research_title_en && <p className="research-title research-title--english" dir="ltr">{form.research_title_en}</p>}
+          <p>في مجلة التربية للعلوم الإنسانية، وسيُنشر في أحد الأعداد القادمة بعد استكمال الإجراءات العلمية والإدارية المعتمدة.</p>
+          <p>مع التقدير...</p>
+        </div>
+
+        <footer className="letter-footer">
+          <div className="qr-placeholder"><span>QR</span><small>رمز التحقق</small></div>
+          <div className="letter-signature"><strong>رئيس هيئة التحرير</strong><span>مجلة التربية للعلوم الإنسانية</span></div>
+        </footer>
+
+        <div className="letter-dates">
+          <span><strong>تاريخ الاستلام:</strong> {formatArabicDate(form.received_on)}</span>
+          <span><strong>تاريخ المراجعة:</strong> {formatArabicDate(form.reviewed_on)}</span>
+          <span><strong>تاريخ القبول:</strong> {formatArabicDate(form.accepted_on)}</span>
+        </div>
+      </article>
+
+      {message && <div className="form-error" role="alert">{message}</div>}
+      <div className="preview-actions">
+        <button className="outline-button" type="button" onClick={onEdit} disabled={saving}>تعديل البيانات</button>
+        <button className="primary-button" type="button" onClick={confirmIssue} disabled={saving}>
+          {saving ? <LoaderCircle className="spin" size={20} /> : <FileCheck2 size={20} />}
+          {saving ? 'جارٍ إصدار القبول...' : 'إصدار وحفظ القبول'}
+        </button>
+      </div>
     </section>
   )
 }
@@ -278,6 +382,8 @@ function Dashboard({ session }) {
   const [count, setCount] = useState(null)
   const [recent, setRecent] = useState([])
   const [loading, setLoading] = useState(true)
+  const [draft, setDraft] = useState(null)
+  const [refreshKey, setRefreshKey] = useState(0)
 
   useEffect(() => {
     let active = true
@@ -298,7 +404,7 @@ function Dashboard({ session }) {
     }
     load()
     return () => { active = false }
-  }, [])
+  }, [refreshKey])
 
   const currentYear = new Date().getFullYear()
   const thisYear = useMemo(
@@ -306,7 +412,22 @@ function Dashboard({ session }) {
     [recent, currentYear],
   )
 
-  const openNew = () => setView('new')
+  const openNew = () => {
+    setDraft(null)
+    setView('new')
+  }
+
+  const showPreview = (nextDraft) => {
+    setDraft(nextDraft)
+    setView('preview')
+  }
+
+  const finishIssue = () => {
+    setDraft(null)
+    setView('dashboard')
+    setLoading(true)
+    setRefreshKey((current) => current + 1)
+  }
 
   return (
     <div className="app-shell">
@@ -314,7 +435,7 @@ function Dashboard({ session }) {
         <Brand compact />
         <nav aria-label="التنقل الرئيسي">
           <button className="nav-item nav-item--active"><LayoutDashboard size={20} /> لوحة التحكم</button>
-          <button className={`nav-item ${view === 'new' ? 'nav-item--active' : ''}`} onClick={openNew}><FilePlus2 size={20} /> إصدار قبول جديد</button>
+          <button className={`nav-item ${view === 'new' || view === 'preview' ? 'nav-item--active' : ''}`} onClick={openNew}><FilePlus2 size={20} /> إصدار قبول جديد</button>
           <button className="nav-item"><Archive size={20} /> أرشيف القبولات</button>
           <button className="nav-item"><Search size={20} /> البحث المتقدم</button>
         </nav>
@@ -334,7 +455,9 @@ function Dashboard({ session }) {
 
         <div className="dashboard__content">
           {view === 'new' ? (
-            <NewAcceptanceForm onCancel={() => setView('dashboard')} onSaved={() => setView('dashboard')} />
+            <NewAcceptanceForm initialDraft={draft} onCancel={() => setView('dashboard')} onPreview={showPreview} />
+          ) : view === 'preview' && draft ? (
+            <AcceptancePreview draft={draft} onEdit={() => setView('new')} onConfirmed={finishIssue} />
           ) : <>
           <section className="welcome-row">
             <div><p>مرحبًا بك</p><h1>لوحة قبولات النشر</h1></div>
