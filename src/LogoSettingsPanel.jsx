@@ -35,9 +35,9 @@ export default function LogoSettingsPanel() {
     let active = true
     const load = async () => {
       if (!supabase) return
-      const { data } = await supabase.from('settings').select('value').eq('key', 'journal').maybeSingle()
+      const { data, error } = await supabase.rpc('get_journal_logo_path')
       if (!active) return
-      const path = data?.value?.logo_path ?? ''
+      const path = error ? '' : (data ?? '')
       setLogoPath(path)
       setPreviewUrl(publicLogoUrl(path))
       setLoading(false)
