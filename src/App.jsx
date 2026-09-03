@@ -274,6 +274,109 @@ function formatArabicDate(value) {
   return `${day}/${month}/${year}`
 }
 
+async function exportAcceptancePdf(element, acceptanceNumber) {
+  if (!element) return
+  const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
+    import('html2canvas'),
+    import('jspdf'),
+  ])
+  await document.fonts?.ready
+  const safeNumber = acceptanceNumber.replace(/[\\/:*?"<>|\s]+/g, '-')
+  element.classList.add('pdf-exporting')
+  try {
+    const canvas = await html2canvas(element, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: '#ffffff',
+      scrollX: 0,
+      scrollY: 0,
+    })
+    const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' })
+    const pageWidth = 210
+    const pageHeight = 297
+    const imageRatio = canvas.width / canvas.height
+    const pageRatio = pageWidth / pageHeight
+    const imageWidth = imageRatio > pageRatio ? pageWidth : pageHeight * imageRatio
+    const imageHeight = imageRatio > pageRatio ? pageWidth / imageRatio : pageHeight
+    const offsetX = (pageWidth - imageWidth) / 2
+    pdf.addImage(canvas.toDataURL('image/jpeg', 0.98), 'JPEG', offsetX, 0, imageWidth, imageHeight, undefined, 'FAST')
+    pdf.save(`قبول-نشر-${safeNumber}.pdf`)
+  } finally {
+    element.classList.remove('pdf-exporting')
+  }
+}
+
+function AcceptanceLetter({ form, researchers, letterRef }) {
+  return (
+    <article className="letter-preview" ref={letterRef}>
+      <header className="letter-header">
+        <div className="letter-header__english" dir="ltr">
+          <strong>Republic of Iraq</strong>
+          <span>Ministry of Higher Education</span>
+          <span>University of Mosul</span>
+          <span>College of Education for Humanities</span>
+        </div>
+        <img className="letter-logo" src={`${import.meta.env.BASE_URL}jeh-official-logo.png`} alt="شعار كلية التربية للعلوم الإنسانية ومجلة التربية للعلوم الإنسانية" />
+        <div className="letter-header__arabic">
+          <strong>جمهورية العراق</strong>
+          <span>وزارة التعليم العالي والبحث العلمي</span>
+          <span>جامعة الموصل</span>
+          <span>كلية التربية للعلوم الإنسانية</span>
+        </div>
+      </header>
+
+      <div className="journal-heading">
+        <h2>مجلة التربية للعلوم الإنسانية</h2>
+        <p>مجلة أكاديمية فصلية محكمة تأسست سنة 2021م</p>
+      </div>
+
+      <div className="letter-meta">
+        <div><strong>العدد:</strong> <span dir="ltr">{form.acceptance_number}</span><br /><strong>التاريخ:</strong> <span dir="ltr">{formatArabicDate(form.letter_date)}</span></div>
+        <div>رقم الإيداع في دار الكتب والوثائق ببغداد<br /><strong>2425 لسنة 2020</strong></div>
+        <div dir="ltr"><strong>ISSN 2710-124X</strong></div>
+      </div>
+
+      <div className="letter-body">
+        <h3>م/ قبول نشر بحث</h3>
+        <p className="recipient-label">{researchers.length === 1 ? 'إلى الباحث:' : 'إلى الباحثين:'}</p>
+        <div className="recipient-table">
+          {researchers.map((researcher, index) => (
+            <div className="recipient-row" key={`${researcher.name}-${index}`}>
+              <strong>{researcher.name}</strong>
+              <span>{researcher.workplace}</span>
+            </div>
+          ))}
+        </div>
+        <p className="greeting">تحية طيبة...</p>
+        <p>نود إعلامكم بقبول نشر بحثكم الموسوم:</p>
+        <p className="research-title">{form.research_title_ar}</p>
+        {form.research_title_en && <p className="research-title research-title--english" dir="ltr">{form.research_title_en}</p>}
+        <p>في مجلة التربية للعلوم الإنسانية، وسيُنشر في أحد الأعداد القادمة بعد استكمال الإجراءات العلمية والإدارية المعتمدة.</p>
+        <p>مع التقدير...</p>
+      </div>
+
+      <footer className="letter-footer">
+        <div className="letter-dates">
+          <span><strong>تاريخ الاستلام:</strong> {formatArabicDate(form.received_on)}</span>
+          <span><strong>تاريخ المراجعة:</strong> {formatArabicDate(form.reviewed_on)}</span>
+          <span><strong>تاريخ القبول:</strong> {formatArabicDate(form.accepted_on)}</span>
+        </div>
+        <div className="letter-signature">
+          <strong>أ.د. إبراهيم محمد محمود الحمداني</strong>
+          <span>رئيس هيئة التحرير</span>
+        </div>
+      </footer>
+
+      <div className="letter-contact">
+        <strong>مجلة التربية للعلوم الإنسانية</strong>
+        <span>جامعة الموصل / كلية التربية للعلوم الإنسانية / الموصل - العراق</span>
+        <span>البريد الإلكتروني: <b dir="ltr">mzuory@gmail.com</b></span>
+        <span>الهاتف: <b dir="ltr">+9647503496549</b></span>
+      </div>
+    </article>
+  )
+}
+
 function AcceptancePreview({ draft, onEdit, onConfirmed }) {
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
@@ -282,36 +385,7 @@ function AcceptancePreview({ draft, onEdit, onConfirmed }) {
   const { form, researchers } = draft
 
   const downloadPdf = async () => {
-    if (!letterRef.current) return
-    const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
-      import('html2canvas'),
-      import('jspdf'),
-    ])
-    await document.fonts?.ready
-    const safeNumber = form.acceptance_number.replace(/[\\/:*?"<>|\s]+/g, '-')
-    letterRef.current.classList.add('pdf-exporting')
-    try {
-      const canvas = await html2canvas(letterRef.current, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: '#ffffff',
-        scrollX: 0,
-        scrollY: 0,
-      })
-      const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' })
-      const pageWidth = 210
-      const pageHeight = 297
-      const imageRatio = canvas.width / canvas.height
-      const pageRatio = pageWidth / pageHeight
-      const imageWidth = imageRatio > pageRatio ? pageWidth : pageHeight * imageRatio
-      const imageHeight = imageRatio > pageRatio ? pageWidth / imageRatio : pageHeight
-      const offsetX = (pageWidth - imageWidth) / 2
-      const imageData = canvas.toDataURL('image/jpeg', 0.98)
-      pdf.addImage(imageData, 'JPEG', offsetX, 0, imageWidth, imageHeight, undefined, 'FAST')
-      pdf.save(`قبول-نشر-${safeNumber}.pdf`)
-    } finally {
-      letterRef.current.classList.remove('pdf-exporting')
-    }
+    await exportAcceptancePdf(letterRef.current, form.acceptance_number)
   }
 
   const confirmIssue = async () => {
@@ -453,6 +527,8 @@ function AcceptanceArchive({ initialSearch = false, onBack }) {
   const [loading, setLoading] = useState(true)
   const [message, setMessage] = useState('')
   const [selected, setSelected] = useState(null)
+  const [downloading, setDownloading] = useState(false)
+  const archiveLetterRef = useRef(null)
 
   useEffect(() => {
     let active = true
@@ -496,6 +572,27 @@ function AcceptanceArchive({ initialSearch = false, onBack }) {
       .sort((a, b) => a.author_order - b.author_order)
       .map((link) => link.researchers)
       .filter(Boolean)
+      .map((researcher) => ({ name: researcher.name_ar, workplace: researcher.workplace }))
+    const archiveForm = {
+      acceptance_number: selected.acceptance_number,
+      research_title_ar: selected.research_title_ar,
+      research_title_en: selected.research_title_en ?? '',
+      received_on: selected.received_on,
+      reviewed_on: selected.reviewed_on,
+      accepted_on: selected.accepted_on,
+      letter_date: selected.letter_date,
+    }
+
+    const downloadArchivedPdf = async () => {
+      setDownloading(true)
+      setMessage('')
+      try {
+        await exportAcceptancePdf(archiveLetterRef.current, selected.acceptance_number)
+      } catch {
+        setMessage('تعذر إنشاء ملف PDF. حاول مرة أخرى أو استخدم زر الطباعة.')
+      }
+      setDownloading(false)
+    }
 
     return (
       <section className="archive-page">
@@ -503,6 +600,16 @@ function AcceptanceArchive({ initialSearch = false, onBack }) {
           <div><p>أرشيف القبولات</p><h1>تفاصيل القبول رقم <span dir="ltr">{selected.acceptance_number}</span></h1></div>
           <button className="outline-button" type="button" onClick={() => setSelected(null)}>العودة إلى الأرشيف</button>
         </div>
+        <div className="archive-detail-actions">
+          <button className="outline-button" type="button" onClick={() => window.print()} disabled={downloading}>
+            <Printer size={19} /> طباعة القبول
+          </button>
+          <button className="primary-button" type="button" onClick={downloadArchivedPdf} disabled={downloading}>
+            {downloading ? <LoaderCircle className="spin" size={20} /> : <Download size={20} />}
+            {downloading ? 'جارٍ إنشاء PDF...' : 'تنزيل PDF مجددًا'}
+          </button>
+        </div>
+        {message && <div className="form-error archive-detail-error" role="alert">{message}</div>}
         <article className="details-card">
           <div className="details-status">قبول محفوظ <span>ساري</span></div>
           <dl className="details-grid">
@@ -517,11 +624,13 @@ function AcceptanceArchive({ initialSearch = false, onBack }) {
           <div className="details-researchers">
             <h2>{researchers.length === 1 ? 'الباحث' : 'الباحثون'}</h2>
             {researchers.length ? researchers.map((researcher, index) => (
-              <div key={`${researcher.name_ar}-${index}`}><strong>{researcher.name_ar}</strong><span>{researcher.workplace}</span></div>
+              <div key={`${researcher.name}-${index}`}><strong>{researcher.name}</strong><span>{researcher.workplace}</span></div>
             )) : <p>{selected.recipient_name} — {selected.recipient_affiliation}</p>}
           </div>
           {selected.internal_notes && <div className="details-notes"><strong>ملاحظات داخلية</strong><p>{selected.internal_notes}</p></div>}
         </article>
+        <div className="archive-letter-title"><span>نسخة كتاب القبول</span><small>يمكن تنزيل هذه النسخة أو طباعتها في أي وقت</small></div>
+        <AcceptanceLetter form={archiveForm} researchers={researchers.length ? researchers : [{ name: selected.recipient_name, workplace: selected.recipient_affiliation }]} letterRef={archiveLetterRef} />
       </section>
     )
   }

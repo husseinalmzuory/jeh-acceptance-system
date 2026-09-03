@@ -175,6 +175,12 @@ button { cursor: pointer; }
 .preview-actions { display: flex; justify-content: center; gap: 12px; padding: 6px 0 32px; }
 .preview-actions .outline-button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
 .archive-toolbar { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
+.archive-detail-actions { display: flex; justify-content: flex-end; gap: 11px; margin-bottom: 16px; }
+.archive-detail-actions .outline-button { display: inline-flex; align-items: center; gap: 8px; }
+.archive-detail-error { margin-bottom: 16px; }
+.archive-letter-title { display: flex; align-items: baseline; gap: 12px; margin: 28px 0 13px; }
+.archive-letter-title span { font-size: 19px; font-weight: 800; }
+.archive-letter-title small { color: var(--muted); }
 .archive-search { flex: 1; height: 50px; display: flex; align-items: center; gap: 10px; padding: 0 15px; background: #fff; border: 1px solid #cfd9e1; border-radius: 11px; color: #668096; }
 .archive-search:focus-within { border-color: var(--blue); box-shadow: 0 0 0 3px rgb(27 112 170 / 10%); }
 .archive-search input { width: 100%; border: 0; outline: 0; background: transparent; color: #172536; }
@@ -236,7 +242,7 @@ button { cursor: pointer; }
 @media print {
   body { background: #fff; }
   .app-shell { display: block; min-height: 0; }
-  .sidebar, .topbar, .preview-page > :not(.letter-preview) { display: none !important; }
+  .sidebar, .topbar, .preview-page > :not(.letter-preview), .archive-page > :not(.letter-preview) { display: none !important; }
   .dashboard__content { max-width: none; margin: 0; padding: 0; }
   .letter-preview {
     width: 210mm;
@@ -281,6 +287,9 @@ button { cursor: pointer; }
   .letter-dates { text-align: right; }
   .preview-actions { flex-direction: column-reverse; }
   .archive-toolbar { align-items: stretch; flex-direction: column; }
+  .archive-detail-actions { flex-direction: column-reverse; }
+  .archive-detail-actions button { width: 100%; justify-content: center; }
+  .archive-letter-title { align-items: flex-start; flex-direction: column; gap: 3px; }
   .details-grid { grid-template-columns: 1fr; }
   .details-grid__wide { grid-column: auto; }
   .details-researchers > div { grid-template-columns: 1fr; gap: 5px; }
