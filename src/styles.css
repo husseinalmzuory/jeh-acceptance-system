@@ -142,8 +142,8 @@ button { cursor: pointer; }
 .letter-preview { width: min(900px, 100%); min-height: 1120px; margin: 0 auto 20px; padding: 42px 55px 32px; background: #fff; color: #111; border: 1px solid #cfd8df; box-shadow: 0 12px 35px rgb(18 44 68 / 9%); font-family: 'Tajawal', sans-serif; }
 .letter-header { display: grid; grid-template-columns: 1fr 110px 1fr; gap: 18px; align-items: start; border-bottom: 2px solid #173b63; padding-bottom: 16px; }
 .letter-header__arabic, .letter-header__english { display: flex; flex-direction: column; gap: 3px; font-size: 13px; line-height: 1.45; }
-.letter-header__english { grid-column: 3; text-align: left; font-family: Arial, sans-serif; font-size: 11px; }
-.letter-header__arabic { grid-column: 1; text-align: right; }
+.letter-header__english { grid-column: 3; grid-row: 1; text-align: left; font-family: Arial, sans-serif; font-size: 11px; }
+.letter-header__arabic { grid-column: 1; grid-row: 1; text-align: right; }
 .letter-header__arabic strong, .letter-header__english strong { color: #173b63; font-size: 14px; }
 .letter-logo { grid-column: 2; grid-row: 1; width: 108px; height: 108px; margin: -7px auto 0; object-fit: contain; }
 .journal-heading { text-align: center; margin: 17px 0 13px; }
