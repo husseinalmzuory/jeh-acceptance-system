@@ -24,12 +24,13 @@
   border-top: 1px dashed #cbd5e1;
   padding-top: 7px;
 }
-
-/* العمود الثالث بصرياً: بيانات المجلة في الجهة اليسرى */
 .letter-footer-journal {
   grid-column: 1;
-  text-align: right;
   direction: rtl;
+  text-align: right;
+  justify-self: stretch;
+  align-self: center;
+  width: 100%;
   line-height: 1.25;
   min-width: 0;
 }
@@ -43,7 +44,6 @@
 
 .letter-footer-journal--email {
   grid-row: 2;
-
   font-size: 8.8px;
   font-weight: 650;
   color: #475569;
@@ -51,8 +51,6 @@
 
 .letter-footer-journal--phone {
   grid-row: 3;
-
-
   font-size: 9.4px;
   font-weight: 800;
   color: #111827;
