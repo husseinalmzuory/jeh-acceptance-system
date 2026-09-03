@@ -13,6 +13,13 @@ function setControlledValue(element, value) {
   element.dispatchEvent(new Event('change', { bubbles: true }))
 }
 
+function localIsoDate(date = new Date()) {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 function cleanNewAcceptanceForm() {
   const page = document.querySelector('.form-page')
   if (!page) return
@@ -32,7 +39,7 @@ function cleanNewAcceptanceForm() {
   setControlledValue(page.querySelector('input[name="received_on"]'), '')
   setControlledValue(page.querySelector('input[name="reviewed_on"]'), '')
 
-  const today = new Date().toISOString().slice(0, 10)
+  const today = localIsoDate()
   setControlledValue(page.querySelector('input[name="accepted_on"]'), today)
   setControlledValue(page.querySelector('input[name="letter_date"]'), today)
 
