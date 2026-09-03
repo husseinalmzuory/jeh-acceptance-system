@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { ImagePlus, LoaderCircle, RotateCcw, Upload } from 'lucide-react'
 import { supabase } from './lib/supabase'
 import './logo-settings.css'
@@ -15,11 +16,20 @@ function publicLogoUrl(path) {
 
 export default function LogoSettingsPanel() {
   const inputRef = useRef(null)
+  const [target, setTarget] = useState(null)
   const [logoPath, setLogoPath] = useState('')
   const [previewUrl, setPreviewUrl] = useState(fallbackLogo)
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
   const [message, setMessage] = useState('')
+
+  useEffect(() => {
+    const locate = () => setTarget(document.querySelector('.admin-tools-shell'))
+    locate()
+    const observer = new MutationObserver(locate)
+    observer.observe(document.body, { childList: true, subtree: true })
+    return () => observer.disconnect()
+  }, [])
 
   useEffect(() => {
     let active = true
@@ -37,7 +47,6 @@ export default function LogoSettingsPanel() {
   }, [])
 
   const status = useMemo(() => logoPath ? 'شعار مخصص مرفوع إلى Supabase' : 'الشعار الافتراضي للمجلة', [logoPath])
-
   const chooseFile = () => inputRef.current?.click()
 
   const uploadLogo = async (event) => {
@@ -79,10 +88,11 @@ export default function LogoSettingsPanel() {
 
     const previousPath = logoPath
     const url = publicLogoUrl(path)
+    const freshUrl = `${url}?v=${Date.now()}`
     setLogoPath(path)
-    setPreviewUrl(`${url}?v=${Date.now()}`)
+    setPreviewUrl(freshUrl)
     setMessage('تم استبدال الشعار بنجاح. سيظهر تلقائيًا في كتب القبول.')
-    window.dispatchEvent(new CustomEvent('jeh-logo-changed', { detail: { url: `${url}?v=${Date.now()}` } }))
+    window.dispatchEvent(new CustomEvent('jeh-logo-changed', { detail: { url: freshUrl } }))
 
     if (previousPath && previousPath !== path) {
       await supabase.storage.from('journal-assets').remove([previousPath])
@@ -109,9 +119,13 @@ export default function LogoSettingsPanel() {
     setUploading(false)
   }
 
-  if (loading) return <section className="admin-tools-card logo-settings-card"><div className="logo-settings-loading"><LoaderCircle className="spin" size={22} /> جارٍ تحميل إعداد الشعار...</div></section>
+  if (!target) return null
 
-  return (
+  const content = loading ? (
+    <section className="admin-tools-card logo-settings-card">
+      <div className="logo-settings-loading"><LoaderCircle className="spin" size={22} /> جارٍ تحميل إعداد الشعار...</div>
+    </section>
+  ) : (
     <section className="admin-tools-card logo-settings-card" dir="rtl">
       <div className="admin-tools-card-heading">
         <ImagePlus size={22} />
@@ -140,4 +154,6 @@ export default function LogoSettingsPanel() {
       {message && <div className="logo-settings-message">{message}</div>}
     </section>
   )
+
+  return createPortal(content, target)
 }
