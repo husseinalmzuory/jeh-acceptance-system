@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { CheckCircle2, LoaderCircle, ShieldCheck, XCircle } from 'lucide-react'
+import { CheckCircle2, LoaderCircle, Search, ShieldCheck, XCircle } from 'lucide-react'
 import { isSupabaseConfigured, supabase } from './lib/supabase'
 import './verification.css'
 
@@ -10,42 +10,50 @@ function formatArabicDate(value) {
 }
 
 export default function VerificationPage({ token }) {
-  const [state, setState] = useState({ loading: true, data: null, error: '' })
+  const [acceptanceNumber, setAcceptanceNumber] = useState('')
+  const [state, setState] = useState({ loading: Boolean(token), data: null, error: '' })
+
+  const applyResult = (data, error, notFoundMessage) => {
+    if (error) {
+      setState({ loading: false, data: null, error: 'تعذر التحقق من كتاب القبول. تحقق من البيانات وحاول مرة أخرى.' })
+      return
+    }
+    const record = Array.isArray(data) ? data[0] : data
+    if (!record) {
+      setState({ loading: false, data: null, error: notFoundMessage })
+      return
+    }
+    setState({ loading: false, data: record, error: '' })
+  }
 
   useEffect(() => {
     let active = true
-
-    const verify = async () => {
+    const verifyToken = async () => {
+      if (!token) return
       if (!isSupabaseConfigured || !supabase) {
         if (active) setState({ loading: false, data: null, error: 'تعذر الاتصال بخدمة التحقق.' })
         return
       }
-
-      if (!token) {
-        if (active) setState({ loading: false, data: null, error: 'رابط التحقق غير مكتمل.' })
-        return
-      }
-
-      const { data, error } = await supabase.rpc('verify_acceptance', { token })
+      const result = await supabase.rpc('verify_acceptance', { token })
       if (!active) return
-
-      if (error) {
-        setState({ loading: false, data: null, error: 'تعذر التحقق من كتاب القبول. تأكد من صحة الرابط وحاول مرة أخرى.' })
-        return
-      }
-
-      const record = Array.isArray(data) ? data[0] : data
-      if (!record) {
-        setState({ loading: false, data: null, error: 'لم يتم العثور على كتاب قبول مطابق لهذا الرابط.' })
-        return
-      }
-
-      setState({ loading: false, data: record, error: '' })
+      applyResult(result.data, result.error, 'لم يتم العثور على كتاب قبول مطابق لهذا الرابط.')
     }
-
-    verify()
+    verifyToken()
     return () => { active = false }
   }, [token])
+
+  const verifyByNumber = async (event) => {
+    event.preventDefault()
+    const normalized = acceptanceNumber.trim()
+    if (!normalized) return
+    if (!isSupabaseConfigured || !supabase) {
+      setState({ loading: false, data: null, error: 'تعذر الاتصال بخدمة التحقق.' })
+      return
+    }
+    setState({ loading: true, data: null, error: '' })
+    const result = await supabase.rpc('verify_acceptance_by_number', { p_acceptance_number: normalized })
+    applyResult(result.data, result.error, 'لم يتم العثور على كتاب قبول بهذا الرقم.')
+  }
 
   const { loading, data, error } = state
   const isRevoked = data?.document_status === 'revoked'
@@ -68,6 +76,27 @@ export default function VerificationPage({ token }) {
             <h1>التحقق من كتاب قبول النشر</h1>
           </div>
         </div>
+
+        {!token && (
+          <form className="verification-search" onSubmit={verifyByNumber}>
+            <label htmlFor="acceptance-number">أدخل رقم القبول كما هو مثبت في الكتاب</label>
+            <div>
+              <input
+                id="acceptance-number"
+                value={acceptanceNumber}
+                onChange={(event) => setAcceptanceNumber(event.target.value)}
+                placeholder="مثال: 157/8"
+                dir="ltr"
+                autoComplete="off"
+                required
+              />
+              <button type="submit" disabled={loading}>
+                {loading ? <LoaderCircle className="spin" size={19} /> : <Search size={19} />}
+                تحقق
+              </button>
+            </div>
+          </form>
+        )}
 
         {loading && (
           <div className="verification-state">
@@ -120,6 +149,12 @@ export default function VerificationPage({ token }) {
                 <p>{data.revocation_reason || 'لم يذكر سبب.'}</p>
                 {data.revoked_at && <small>تاريخ الإلغاء: {formatArabicDate(data.revoked_at.slice(0, 10))}</small>}
               </div>
+            )}
+
+            {!token && (
+              <button className="verification-again" type="button" onClick={() => setState({ loading: false, data: null, error: '' })}>
+                التحقق من قبول آخر
+              </button>
             )}
           </>
         )}
