@@ -13,6 +13,7 @@ import LetterQrRuntime from './LetterQrRuntime.jsx'
 import JournalLogoRuntime from './JournalLogoRuntime.jsx'
 import LogoSettingsPanel from './LogoSettingsPanel.jsx'
 import LetterDateFormatRuntime from './LetterDateFormatRuntime.jsx'
+import PdfFilenameRuntime from './PdfFilenameRuntime.jsx'
 import ProductionRuntime from './ProductionRuntime.jsx'
 import RevokedLetterRuntime from './RevokedLetterRuntime.jsx'
 import './styles.css'
@@ -48,6 +49,7 @@ createRoot(document.getElementById('root')).render(
         <JournalLogoRuntime />
         <LetterQrRuntime />
         <LetterDateFormatRuntime />
+        <PdfFilenameRuntime />
         <ProductionRuntime />
         <RevokedLetterRuntime />
       </>
