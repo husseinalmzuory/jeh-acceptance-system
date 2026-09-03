@@ -45,8 +45,23 @@ export default function JournalLogoRuntime() {
 
     load()
     schedule()
-    const observer = new MutationObserver(schedule)
-    observer.observe(document.body, { childList: true, subtree: true })
+
+    // React can reuse the same <img> when switching between archive records and
+    // restore its JSX fallback src. Observe src changes as well as new DOM nodes
+    // so the centrally configured journal logo always wins.
+    const observer = new MutationObserver((mutations) => {
+      const relevant = mutations.some((mutation) => (
+        mutation.type === 'childList'
+        || (mutation.type === 'attributes' && mutation.target?.classList?.contains('letter-logo'))
+      ))
+      if (relevant) schedule()
+    })
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['src'],
+    })
 
     const handleLogoChanged = (event) => {
       currentUrl = event.detail?.url || fallbackLogo
@@ -54,10 +69,16 @@ export default function JournalLogoRuntime() {
     }
     window.addEventListener('jeh-logo-changed', handleLogoChanged)
 
+    const refreshLogo = () => load()
+    window.addEventListener('focus', refreshLogo)
+    document.addEventListener('visibilitychange', refreshLogo)
+
     return () => {
       active = false
       observer.disconnect()
       window.removeEventListener('jeh-logo-changed', handleLogoChanged)
+      window.removeEventListener('focus', refreshLogo)
+      document.removeEventListener('visibilitychange', refreshLogo)
     }
   }, [])
 
