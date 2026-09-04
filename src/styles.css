@@ -153,7 +153,16 @@ button { cursor: pointer; }
 .letter-meta { display: grid; grid-template-columns: 1fr 1.4fr 1fr; gap: 12px; align-items: center; border: 1px solid #173b63; padding: 9px 12px; font-size: 12px; line-height: 1.65; }
 .letter-meta > div:nth-child(2) { text-align: center; border-inline: 1px solid #c3ced7; }
 .letter-meta > div:last-child { text-align: left; }
-.letter-body { padding: 27px 10px 10px; font-size: 16px; line-height: 2; }
+.letter-body {
+  padding: 27px 10px 10px;
+  font-size: 16px;
+  line-height: 2;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
 .letter-body h3 { text-align: center; color: #b01818; text-decoration: underline; margin: 0 0 25px; font-size: 22px; }
 .recipient-label { font-weight: 700; margin-bottom: 5px; }
 .recipient-table { border: 1px solid #b8c2ca; margin-bottom: 17px; }
@@ -501,7 +510,7 @@ button { cursor: pointer; }
  * together at the foot of A4 regardless of the number of researchers.
  */
 .letter-bottom {
-  margin-top: auto;
+  margin-top: 0;
   flex: 0 0 auto;
 }
 .letter-preview[data-researcher-count] > .letter-bottom > .letter-footer {
