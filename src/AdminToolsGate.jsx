@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { LoaderCircle } from 'lucide-react'
 import AdminToolsPage from './AdminToolsPage.jsx'
+import NavigationSidebar from './NavigationSidebar.jsx'
 import { isSupabaseConfigured, supabase } from './lib/supabase'
 
 export default function AdminToolsGate() {
@@ -49,5 +50,12 @@ export default function AdminToolsGate() {
     )
   }
 
-  return <AdminToolsPage session={session} />
+  return (
+    <div className="app-shell">
+      <NavigationSidebar active="admin" />
+      <div className="standalone-page-content">
+        <AdminToolsPage session={session} />
+      </div>
+    </div>
+  )
 }
