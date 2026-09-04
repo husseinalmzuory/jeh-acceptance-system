@@ -32,7 +32,7 @@
 
 .journal-stamp-image {
   position: absolute;
-  left: 25%;
+  left: 10%;
   bottom: 6px;
   transform: translateX(-50%);
   display: block;
