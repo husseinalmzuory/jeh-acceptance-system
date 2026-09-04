@@ -20,7 +20,10 @@ function syncSignatureDates() {
       dateNode.style.direction = 'ltr'
       signature.appendChild(dateNode)
     }
-    dateNode.textContent = acceptedDate
+
+    if (dateNode.textContent !== acceptedDate) {
+      dateNode.textContent = acceptedDate
+    }
   })
 }
 
