@@ -33,6 +33,8 @@
 .journal-stamp-image {
   position: absolute;
   left: 0%;
+    transform: translateX(-50%);
+
   bottom: 6px;
   transform: translateX(-50%);
   display: block;
