@@ -166,11 +166,27 @@ button { cursor: pointer; }
 }
 .letter-body h3 { text-align: center; color: #b01818; text-decoration: underline; margin: 0 0 25px; font-size: 22px; }
 .recipient-label { font-weight: 700; margin-bottom: 5px; }
-.recipient-table { border: 1px solid #b8c2ca; margin-bottom: 17px; }
-.recipient-row { display: grid; grid-template-columns: max-content 1fr; min-height: 43px; align-items: center; }
+.recipient-table {
+  display: table;
+  width: 100%;
+  table-layout: auto;
+  border-collapse: collapse;
+  border: 1px solid #b8c2ca;
+  margin-bottom: 17px;
+}
+.recipient-row { display: table-row; min-height: 43px; }
 .recipient-row + .recipient-row { border-top: 1px solid #d6dde2; }
-.recipient-row strong, .recipient-row span { padding: 7px 12px; }
-.recipient-row strong { border-left: 1px solid #d6dde2; }
+.recipient-row strong,
+.recipient-row span {
+  display: table-cell;
+  padding: 7px 12px;
+  vertical-align: middle;
+}
+.recipient-row strong {
+  width: 1%;
+  white-space: nowrap;
+  border-left: 1px solid #d6dde2;
+}
 .greeting { font-weight: 700; }
 .research-title { margin: 12px 25px; color: #b01818; text-align: center; font-weight: 800; font-size: 18px; line-height: 1.8; }
 .research-title--english { font-family: Georgia, serif; font-size: 15px; }
@@ -534,8 +550,10 @@ button { cursor: pointer; }
   .letter-meta > div:nth-child(2) { border: 0; border-block: 1px solid #c3ced7; padding-block: 7px; }
   .letter-meta > div:last-child { text-align: center; }
   .letter-body { padding-inline: 0; font-size: 14px; }
-  .recipient-row { grid-template-columns: 1fr; }
-  .recipient-row strong { border-left: 0; border-bottom: 1px solid #d6dde2; }
+  .recipient-row strong {
+    border-left: 1px solid #d6dde2;
+    border-bottom: 0;
+  }
   .letter-footer { grid-template-columns: 1fr 1fr; gap: 15px; padding: 0; }
   .letter-signature { min-width: 0; }
   .letter-dates { text-align: right; }
