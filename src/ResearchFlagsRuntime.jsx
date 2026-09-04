@@ -104,6 +104,15 @@ function createFlagsSection() {
 async function loadExistingFlags(page, container) {
   const acceptanceNumber = readFormNumber(page)
   const stored = readStoredFlags()
+  const heading = page.querySelector('.page-heading h1')?.textContent?.trim()
+  const isEditing = heading === 'تعديل قبول محفوظ'
+
+  // Every new acceptance must start with all four choices unanswered. Do not
+  // reuse a previous draft or silently assume a signature/stamp preference.
+  if (!isEditing) {
+    sessionStorage.removeItem(STORAGE_KEY)
+    return
+  }
 
   if (stored?.acceptanceNumber === acceptanceNumber && acceptanceNumber) {
     setChoice(container, 'research_is_extracted', stored.isExtractedResearch)
@@ -115,7 +124,6 @@ async function loadExistingFlags(page, container) {
 
   if (!acceptanceNumber || !supabase) {
     sessionStorage.removeItem(STORAGE_KEY)
-    setChoice(container, 'acceptance_include_signature_stamp', true)
     return
   }
 
@@ -125,10 +133,7 @@ async function loadExistingFlags(page, container) {
     .eq('acceptance_number', acceptanceNumber)
     .maybeSingle()
 
-  if (!data) {
-    setChoice(container, 'acceptance_include_signature_stamp', true)
-    return
-  }
+  if (!data) return
 
   setChoice(container, 'research_is_extracted', data.is_extracted_research)
   setChoice(container, 'research_is_iraqi', data.is_iraqi_research)
@@ -175,7 +180,7 @@ export default function ResearchFlagsRuntime() {
           p_is_extracted_research: stored?.isExtractedResearch ?? null,
           p_is_iraqi_research: stored?.isIraqiResearch ?? null,
           p_is_non_arabic_language: stored?.isNonArabicLanguage ?? null,
-          p_include_signature_stamp: stored?.includeSignatureStamp ?? true,
+          p_include_signature_stamp: stored?.includeSignatureStamp ?? null,
         }
       }
       return originalRpc(fn, args, options)
