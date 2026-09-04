@@ -408,23 +408,25 @@ function AcceptanceLetter({ form, researchers, letterRef }) {
         <p>مع التقدير...</p>
       </div>
 
-      <footer className="letter-footer">
-        <div className="letter-dates">
-          <span><strong>تاريخ الاستلام:</strong> {formatArabicDate(form.received_on)}</span>
-          <span><strong>تاريخ المراجعة:</strong> {formatArabicDate(form.reviewed_on)}</span>
-          <span><strong>تاريخ القبول:</strong> {formatArabicDate(form.accepted_on)}</span>
-        </div>
-        <div className="letter-signature">
-          <strong>أ.د. إبراهيم محمد محمود الحمداني</strong>
-          <span>رئيس هيئة التحرير</span>
-        </div>
-      </footer>
+      <div className="letter-bottom">
+        <footer className="letter-footer">
+          <div className="letter-dates">
+            <span><strong>تاريخ الاستلام:</strong> {formatArabicDate(form.received_on)}</span>
+            <span><strong>تاريخ المراجعة:</strong> {formatArabicDate(form.reviewed_on)}</span>
+            <span><strong>تاريخ القبول:</strong> {formatArabicDate(form.accepted_on)}</span>
+          </div>
+          <div className="letter-signature">
+            <strong>أ.د. إبراهيم محمد محمود الحمداني</strong>
+            <span>رئيس هيئة التحرير</span>
+          </div>
+        </footer>
 
-      <div className="letter-contact">
-        <strong>مجلة التربية للعلوم الإنسانية</strong>
-        <span>جامعة الموصل / كلية التربية للعلوم الإنسانية / الموصل - العراق</span>
-        <span>البريد الإلكتروني: <b dir="ltr">mzuory@gmail.com</b></span>
-        <span>الهاتف: <b dir="ltr">+9647503496549</b></span>
+        <div className="letter-contact">
+          <strong>مجلة التربية للعلوم الإنسانية</strong>
+          <span>جامعة الموصل / كلية التربية للعلوم الإنسانية / الموصل - العراق</span>
+          <span>البريد الإلكتروني: <b dir="ltr">mzuory@gmail.com</b></span>
+          <span>الهاتف: <b dir="ltr">+9647503496549</b></span>
+        </div>
       </div>
     </article>
   )
