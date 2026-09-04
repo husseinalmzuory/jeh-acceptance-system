@@ -14,6 +14,7 @@ function readStoredFlags() {
 
 function writeStoredFlags(flags) {
   sessionStorage.setItem(STORAGE_KEY, JSON.stringify(flags))
+  window.dispatchEvent(new CustomEvent('jeh-acceptance-options-changed', { detail: flags }))
 }
 
 function readFormNumber(page) {
@@ -32,6 +33,7 @@ function collectFlags(container, acceptanceNumber) {
     isExtractedResearch: getSelectedValue(container, 'research_is_extracted'),
     isIraqiResearch: getSelectedValue(container, 'research_is_iraqi'),
     isNonArabicLanguage: getSelectedValue(container, 'research_is_non_arabic'),
+    includeSignatureStamp: getSelectedValue(container, 'acceptance_include_signature_stamp'),
   }
 }
 
@@ -84,7 +86,7 @@ function createFlagsSection() {
 
   const title = document.createElement('div')
   title.className = 'form-section__title'
-  title.innerHTML = '<span>✓</span><div><h2>تصنيف البحث</h2><p>يجب الإجابة عن جميع الخيارات قبل الانتقال إلى المعاينة</p></div>'
+  title.innerHTML = '<span>✓</span><div><h2>تصنيف وخيارات القبول</h2><p>يجب الإجابة عن جميع الخيارات قبل الانتقال إلى المعاينة</p></div>'
 
   const grid = document.createElement('div')
   grid.className = 'research-flags-grid'
@@ -92,6 +94,7 @@ function createFlagsSection() {
     buildQuestion('research_is_extracted', 'هل البحث مستل؟'),
     buildQuestion('research_is_iraqi', 'هل البحث عراقي؟'),
     buildQuestion('research_is_non_arabic', 'هل البحث مكتوب بلغة غير العربية؟'),
+    buildQuestion('acceptance_include_signature_stamp', 'قبول بتوقيع وختم؟'),
   )
 
   section.append(title, grid)
@@ -106,31 +109,38 @@ async function loadExistingFlags(page, container) {
     setChoice(container, 'research_is_extracted', stored.isExtractedResearch)
     setChoice(container, 'research_is_iraqi', stored.isIraqiResearch)
     setChoice(container, 'research_is_non_arabic', stored.isNonArabicLanguage)
+    setChoice(container, 'acceptance_include_signature_stamp', stored.includeSignatureStamp ?? true)
     return
   }
 
   if (!acceptanceNumber || !supabase) {
     sessionStorage.removeItem(STORAGE_KEY)
+    setChoice(container, 'acceptance_include_signature_stamp', true)
     return
   }
 
   const { data } = await supabase
     .from('acceptances')
-    .select('is_extracted_research,is_iraqi_research,is_non_arabic_language')
+    .select('is_extracted_research,is_iraqi_research,is_non_arabic_language,include_signature_stamp')
     .eq('acceptance_number', acceptanceNumber)
     .maybeSingle()
 
-  if (!data) return
+  if (!data) {
+    setChoice(container, 'acceptance_include_signature_stamp', true)
+    return
+  }
 
   setChoice(container, 'research_is_extracted', data.is_extracted_research)
   setChoice(container, 'research_is_iraqi', data.is_iraqi_research)
   setChoice(container, 'research_is_non_arabic', data.is_non_arabic_language)
+  setChoice(container, 'acceptance_include_signature_stamp', data.include_signature_stamp ?? true)
 
   writeStoredFlags({
     acceptanceNumber,
     isExtractedResearch: data.is_extracted_research,
     isIraqiResearch: data.is_iraqi_research,
     isNonArabicLanguage: data.is_non_arabic_language,
+    includeSignatureStamp: data.include_signature_stamp ?? true,
   })
 }
 
@@ -165,6 +175,7 @@ export default function ResearchFlagsRuntime() {
           p_is_extracted_research: stored?.isExtractedResearch ?? null,
           p_is_iraqi_research: stored?.isIraqiResearch ?? null,
           p_is_non_arabic_language: stored?.isNonArabicLanguage ?? null,
+          p_include_signature_stamp: stored?.includeSignatureStamp ?? true,
         }
       }
       return originalRpc(fn, args, options)
