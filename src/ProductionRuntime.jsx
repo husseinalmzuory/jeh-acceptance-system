@@ -50,7 +50,7 @@ function cleanNewAcceptanceForm() {
 
 function applyStaticProductionLabels(yearCount) {
   const version = document.querySelector('.version-label')
-  if (version && version.textContent !== 'الإصدار 1.0') version.textContent = 'الإصدار 1.0'
+  if (version && version.textContent !== 'الإصدار 1.0.0') version.textContent = 'الإصدار 1.0.0'
 
   if (yearCount != null) {
     const cards = document.querySelectorAll('.stats-grid .stat-card')
