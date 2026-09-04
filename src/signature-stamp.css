@@ -1,5 +1,10 @@
 .letter-footer {
   position: relative;
+  /*
+   * The stamp is absolutely positioned and therefore does not reserve space
+   * by itself. This safety band keeps the letter body above its top edge.
+   */
+  min-height: 150px;
 }
 
 .letter-signature {
