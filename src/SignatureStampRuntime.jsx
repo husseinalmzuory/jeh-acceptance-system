@@ -33,6 +33,7 @@ function applyAssets(signatureUrl, stampUrl) {
   document.querySelectorAll('.letter-preview').forEach((letter) => {
     const signatureBlock = letter.querySelector('.letter-signature')
     const editorName = signatureBlock?.querySelector('strong') ?? null
+
     ensureImage(
       signatureBlock,
       'editor-signature-image',
@@ -76,8 +77,18 @@ export default function SignatureStampRuntime() {
         supabase.rpc('get_journal_stamp_path'),
       ])
       if (!active) return
-      signatureUrl = signatureResult.error ? '' : publicAssetUrl(signatureResult.data)
-      stampUrl = stampResult.error ? '' : publicAssetUrl(stampResult.data)
+
+      const cacheBust = `v=${Date.now()}`
+      const signaturePath = signatureResult.error ? '' : signatureResult.data
+      const stampPath = stampResult.error ? '' : stampResult.data
+
+      signatureUrl = signaturePath
+        ? `${publicAssetUrl(signaturePath)}?${cacheBust}`
+        : ''
+      stampUrl = stampPath
+        ? `${publicAssetUrl(stampPath)}?${cacheBust}`
+        : ''
+
       schedule()
     }
 
@@ -94,12 +105,22 @@ export default function SignatureStampRuntime() {
       if (event.detail?.kind === 'stamp') stampUrl = event.detail.url || ''
       schedule()
     }
+
+    const refreshAssets = () => load()
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') refreshAssets()
+    }
+
     window.addEventListener('jeh-signature-stamp-changed', handleChanged)
+    window.addEventListener('focus', refreshAssets)
+    document.addEventListener('visibilitychange', handleVisibility)
 
     return () => {
       active = false
       observer.disconnect()
       window.removeEventListener('jeh-signature-stamp-changed', handleChanged)
+      window.removeEventListener('focus', refreshAssets)
+      document.removeEventListener('visibilitychange', handleVisibility)
     }
   }, [])
 
