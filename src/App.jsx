@@ -322,8 +322,17 @@ async function exportAcceptancePdf(element, acceptanceNumber, researcherName, re
   ])
   await document.fonts?.ready
   const filename = buildPdfFilename(researcherName, researchTitle, acceptanceNumber)
+  const fitClasses = ['pdf-fit--compact', 'pdf-fit--tight', 'pdf-fit--maximum']
   element.classList.add('pdf-exporting')
   try {
+    // Long titles, several researchers, the signature and the QR can together
+    // exceed A4. Tighten the layout only as much as needed before capturing it.
+    for (const fitClass of fitClasses) {
+      await new Promise((resolve) => requestAnimationFrame(resolve))
+      if (element.scrollHeight <= element.clientHeight + 1) break
+      element.classList.add(fitClass)
+    }
+    await new Promise((resolve) => requestAnimationFrame(resolve))
     const canvas = await html2canvas(element, {
       scale: 2,
       useCORS: true,
@@ -342,13 +351,17 @@ async function exportAcceptancePdf(element, acceptanceNumber, researcherName, re
     pdf.addImage(canvas.toDataURL('image/jpeg', 0.98), 'JPEG', offsetX, 0, imageWidth, imageHeight, undefined, 'FAST')
     pdf.save(filename)
   } finally {
-    element.classList.remove('pdf-exporting')
+    element.classList.remove('pdf-exporting', ...fitClasses)
   }
 }
 
 function AcceptanceLetter({ form, researchers, letterRef }) {
   return (
-    <article className="letter-preview" ref={letterRef}>
+    <article
+      className={`letter-preview letter-preview--researchers-${Math.min(researchers.length, 6)}`}
+      data-researcher-count={researchers.length}
+      ref={letterRef}
+    >
       <header className="letter-header">
         <div className="letter-header__english" dir="ltr">
           <strong>Republic of Iraq</strong>
