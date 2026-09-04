@@ -504,10 +504,10 @@ button { cursor: pointer; }
   margin-top: auto;
   flex: 0 0 auto;
 }
-.letter-bottom > .letter-footer {
+.letter-preview[data-researcher-count] > .letter-bottom > .letter-footer {
   margin-top: 0;
   margin-bottom: 0;
 }
-.letter-bottom > .letter-contact {
+.letter-preview[data-researcher-count] > .letter-bottom > .letter-contact {
   margin-top: 0;
 }
