@@ -497,14 +497,17 @@ button { cursor: pointer; }
 }
 
 /*
- * Keep the dates/editor block attached to the contact separator at the bottom
- * of every acceptance letter. Any flexible space belongs above the footer.
+ * A single structural bottom zone keeps dates, stamp, editor and verification
+ * together at the foot of A4 regardless of the number of researchers.
  */
-.letter-preview[data-researcher-count] > .letter-footer {
+.letter-bottom {
   margin-top: auto;
+  flex: 0 0 auto;
+}
+.letter-bottom > .letter-footer {
+  margin-top: 0;
   margin-bottom: 0;
 }
-.letter-preview[data-researcher-count] > .letter-contact {
+.letter-bottom > .letter-contact {
   margin-top: 0;
-  flex-shrink: 0;
 }
