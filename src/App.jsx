@@ -322,17 +322,34 @@ async function exportAcceptancePdf(element, acceptanceNumber, researcherName, re
   ])
   await document.fonts?.ready
   const filename = buildPdfFilename(researcherName, researchTitle, acceptanceNumber)
-  const fitClasses = ['pdf-fit--compact', 'pdf-fit--tight', 'pdf-fit--maximum']
+  const fitClasses = ['pdf-fit--compact', 'pdf-fit--tight', 'pdf-fit--maximum', 'pdf-fit--emergency']
+  const letterBody = element.querySelector('.letter-body')
+  const nextFrame = () => new Promise((resolve) => requestAnimationFrame(resolve))
+  const contentOverflows = () => (
+    element.scrollHeight > element.clientHeight + 1
+    || (letterBody && letterBody.scrollHeight > letterBody.clientHeight + 1)
+  )
+
   element.classList.add('pdf-exporting')
   try {
-    // Long titles, several researchers, the signature and the QR can together
-    // exceed A4. Tighten the layout only as much as needed before capturing it.
+    // The stamp is absolutely positioned, so checking only the A4 element can
+    // miss text overflowing from the body into the reserved stamp area.
     for (const fitClass of fitClasses) {
-      await new Promise((resolve) => requestAnimationFrame(resolve))
-      if (element.scrollHeight <= element.clientHeight + 1) break
+      await nextFrame()
+      if (!contentOverflows()) break
       element.classList.add(fitClass)
     }
-    await new Promise((resolve) => requestAnimationFrame(resolve))
+
+    // Last-resort proportional body fit for unusually long names and titles.
+    // It is export-only and never changes the on-screen preview.
+    let bodyZoom = 1
+    await nextFrame()
+    while (letterBody && contentOverflows() && bodyZoom > 0.72) {
+      bodyZoom = Math.max(0.72, bodyZoom - 0.04)
+      letterBody.style.zoom = String(bodyZoom)
+      await nextFrame()
+    }
+
     const canvas = await html2canvas(element, {
       scale: 2,
       useCORS: true,
@@ -351,6 +368,7 @@ async function exportAcceptancePdf(element, acceptanceNumber, researcherName, re
     pdf.addImage(canvas.toDataURL('image/jpeg', 0.98), 'JPEG', offsetX, 0, imageWidth, imageHeight, undefined, 'FAST')
     pdf.save(filename)
   } finally {
+    if (letterBody) letterBody.style.removeProperty('zoom')
     element.classList.remove('pdf-exporting', ...fitClasses)
   }
 }
