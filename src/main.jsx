@@ -17,6 +17,7 @@ import PdfFilenameRuntime from './PdfFilenameRuntime.jsx'
 import ProductionRuntime from './ProductionRuntime.jsx'
 import ResearchFlagsRuntime from './ResearchFlagsRuntime.jsx'
 import RevokedLetterRuntime from './RevokedLetterRuntime.jsx'
+import SignatureDateRuntime from './SignatureDateRuntime.jsx'
 import './styles.css'
 import './letter-verification.css'
 
@@ -54,6 +55,7 @@ createRoot(document.getElementById('root')).render(
         <ProductionRuntime />
         <ResearchFlagsRuntime />
         <RevokedLetterRuntime />
+        <SignatureDateRuntime />
       </>
     )}
   </StrictMode>,
