@@ -30,7 +30,7 @@
   z-index: 2;
 }
 
-.j-stamp-image {
+.journal-stamp-image {
   position: absolute;
   left: 50%;
   bottom: 6px;
@@ -40,7 +40,7 @@
   height: auto;
   max-width: none;
   max-height: none;
-  object-fit:: none;
+  object-fit: none;
   pointer-events: none;
   z-index: 1;
 }
