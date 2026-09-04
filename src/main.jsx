@@ -3,7 +3,6 @@ import { createRoot } from 'react-dom/client'
 import App from './App.jsx'
 import VerificationPage from './VerificationPage.jsx'
 import AdminArchiveActions from './AdminArchiveActions.jsx'
-import AdminQuickAccess from './AdminQuickAccess.jsx'
 import AdminToolsGate from './AdminToolsGate.jsx'
 import AccountSecurityPanel from './AccountSecurityPanel.jsx'
 import AdvancedArchiveGate from './AdvancedArchiveGate.jsx'
@@ -49,7 +48,6 @@ createRoot(document.getElementById('root')).render(
       <>
         <App />
         <AdminArchiveActions />
-        <AdminQuickAccess />
         <LetterSettingsRuntime />
         <JournalLogoRuntime />
         <LetterQrRuntime />
