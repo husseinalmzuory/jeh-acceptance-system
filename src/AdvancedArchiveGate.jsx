@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { LoaderCircle } from 'lucide-react'
 import AdvancedArchivePage from './AdvancedArchivePage.jsx'
+import NavigationSidebar from './NavigationSidebar.jsx'
 import { isSupabaseConfigured, supabase } from './lib/supabase'
 
 export default function AdvancedArchiveGate() {
@@ -26,5 +27,12 @@ export default function AdvancedArchiveGate() {
 
   if (session === undefined) return <main className="advanced-archive-page"><div className="advanced-empty"><LoaderCircle className="spin" size={32} /> جارٍ التحقق من جلسة الدخول...</div></main>
   if (!session) return <main className="advanced-archive-page" dir="rtl"><div className="advanced-archive-shell"><section className="advanced-table-card advanced-empty"><p>يجب تسجيل الدخول بحساب المجلة أولًا.</p><a href={window.location.pathname}>العودة إلى تسجيل الدخول</a></section></div></main>
-  return <AdvancedArchivePage session={session} />
+  return (
+    <div className="app-shell">
+      <NavigationSidebar active="advancedArchive" />
+      <div className="standalone-page-content">
+        <AdvancedArchivePage session={session} />
+      </div>
+    </div>
+  )
 }
