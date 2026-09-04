@@ -77,6 +77,7 @@ button { cursor: pointer; }
 .nav-item--active { box-shadow: inset -3px 0 #d9ae5f; }
 .logout-button { margin-top: auto; border-top: 1px solid rgb(255 255 255 / 9%); border-radius: 0; padding-top: 22px; }
 .dashboard { min-width: 0; }
+.standalone-page-content { min-width: 0; }
 .topbar { height: 76px; background: #fff; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 34px; }
 .topbar span, .topbar small { display: block; }
 .topbar span { font-weight: 700; }
