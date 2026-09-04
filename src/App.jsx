@@ -9,9 +9,7 @@ import {
   Eye,
   Download,
   History,
-  LayoutDashboard,
   LoaderCircle,
-  LogOut,
   Plus,
   Pencil,
   Printer,
@@ -20,6 +18,7 @@ import {
   Trash2,
 } from 'lucide-react'
 import { isSupabaseConfigured, supabase } from './lib/supabase'
+import NavigationSidebar from './NavigationSidebar.jsx'
 
 function Brand({ compact = false }) {
   return (
@@ -775,7 +774,9 @@ function AcceptanceArchive({ initialSearch = false, onBack, onEditRecord }) {
 }
 
 function Dashboard({ session }) {
-  const [view, setView] = useState('dashboard')
+  const requestedView = new URLSearchParams(window.location.search).get('view')
+  const initialView = ['new', 'archive', 'search'].includes(requestedView) ? requestedView : 'dashboard'
+  const [view, setView] = useState(initialView)
   const [count, setCount] = useState(null)
   const [recent, setRecent] = useState([])
   const [loading, setLoading] = useState(true)
@@ -833,18 +834,13 @@ function Dashboard({ session }) {
 
   return (
     <div className="app-shell">
-      <aside className="sidebar">
-        <Brand compact />
-        <nav aria-label="التنقل الرئيسي">
-          <button className={`nav-item ${view === 'dashboard' ? 'nav-item--active' : ''}`} onClick={() => setView('dashboard')}><LayoutDashboard size={20} /> لوحة التحكم</button>
-          <button className={`nav-item ${view === 'new' || view === 'preview' ? 'nav-item--active' : ''}`} onClick={openNew}><FilePlus2 size={20} /> إصدار قبول جديد</button>
-          <button className={`nav-item ${view === 'archive' ? 'nav-item--active' : ''}`} onClick={() => setView('archive')}><Archive size={20} /> أرشيف القبولات</button>
-          <button className={`nav-item ${view === 'search' ? 'nav-item--active' : ''}`} onClick={() => setView('search')}><Search size={20} /> البحث المتقدم</button>
-        </nav>
-        <button className="logout-button" onClick={() => supabase.auth.signOut()}>
-          <LogOut size={19} /> تسجيل الخروج
-        </button>
-      </aside>
+      <NavigationSidebar
+        active={view}
+        onDashboard={() => setView('dashboard')}
+        onNew={openNew}
+        onArchive={() => setView('archive')}
+        onSearch={() => setView('search')}
+      />
 
       <main className="dashboard">
         <header className="topbar">
