@@ -165,7 +165,7 @@ button { cursor: pointer; }
 .research-title { margin: 12px 25px; color: #b01818; text-align: center; font-weight: 800; font-size: 18px; line-height: 1.8; }
 .research-title--english { font-family: Georgia, serif; font-size: 15px; }
 .letter-footer { display: grid; grid-template-columns: 1fr 1fr; align-items: end; margin-top: 55px; padding: 0 18px; }
-.letter-signature { text-align: center; margin-right: auto; min-width: 260px; display: flex; flex-direction: column; gap: 8px; }
+.letter-signature { text-align: center; margin-right: auto; min-width: 260px; display: flex; flex-direction: column; gap: 8px; padding-bottom: 18px; }
 .letter-signature strong { font-size: 17px; }
 .letter-signature span { font-size: 13px; }
 .letter-dates { display: flex; flex-direction: column; gap: 5px; text-align: right; font-size: 12px; line-height: 1.65; }
@@ -243,7 +243,7 @@ button { cursor: pointer; }
   .login-intro__content { margin: 45px 0 25px; }
   .login-intro h1 { font-size: 34px; }
   .login-intro__foot { display: none; }
-  .login-panel { padding: 38px 24px; }
+  .login-panel { padding: 38px 24px; background: #f7f9fb; }
   .app-shell { grid-template-columns: 78px 1fr; }
   .sidebar { padding: 20px 10px; }
   .sidebar .brand > div:last-child, .nav-item { font-size: 0; }
