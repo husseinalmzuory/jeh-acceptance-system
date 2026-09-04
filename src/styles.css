@@ -495,3 +495,16 @@ button { cursor: pointer; }
   .details-researchers > div { grid-template-columns: 1fr; gap: 5px; }
   .details-status, .details-status > div { align-items: flex-start; flex-direction: column; }
 }
+
+/*
+ * Keep the dates/editor block attached to the contact separator at the bottom
+ * of every acceptance letter. Any flexible space belongs above the footer.
+ */
+.letter-preview[data-researcher-count] > .letter-footer {
+  margin-top: auto;
+  margin-bottom: 0;
+}
+.letter-preview[data-researcher-count] > .letter-contact {
+  margin-top: 0;
+  flex-shrink: 0;
+}
