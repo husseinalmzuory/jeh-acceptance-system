@@ -849,7 +849,7 @@ function Dashboard({ session }) {
       <main className="dashboard">
         <header className="topbar">
           <div>
-            <span>منظومة قبولات النشر <em className="version-label">الإصدار التجريبي 0.10</em></span>
+            <span>منظومة قبولات النشر <em className="version-label">الإصدار 1.0.0</em></span>
             <small>{session.user.email}</small>
           </div>
           <div className="status-pill"><span /> متصل بقاعدة البيانات</div>
