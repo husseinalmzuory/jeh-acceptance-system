@@ -4,25 +4,35 @@
 
 .letter-signature {
   position: relative;
+  z-index: 2;
 }
 
 /*
  * Normalize the visual signature area so uploaded signatures of very different
- * pixel sizes appear consistently in the acceptance letter. object-fit keeps
- * the original aspect ratio and prevents stretching.
+ * pixel sizes appear consistently in the acceptance letter. The PNG can safely
+ * overlap the editor name because transparent pixels remain transparent.
  */
 .editor-signature-image {
   display: block;
-  width: 150px;
-  height: 62px;
-  margin: 0 auto 4px;
+  width: 300px;
+  height: 124px;
+  margin: -26px auto -18px;
   object-fit: contain;
   object-position: center bottom;
+  position: relative;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.letter-signature strong,
+.letter-signature span {
+  position: relative;
+  z-index: 2;
 }
 
 .journal-stamp-image {
   position: absolute;
-  left: 50%;
+  left: 43%;
   bottom: 8px;
   transform: translateX(-50%);
   display: block;
