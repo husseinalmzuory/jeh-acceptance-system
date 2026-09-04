@@ -6,14 +6,18 @@
   position: relative;
 }
 
+/*
+ * Normalize the visual signature area so uploaded signatures of very different
+ * pixel sizes appear consistently in the acceptance letter. object-fit keeps
+ * the original aspect ratio and prevents stretching.
+ */
 .editor-signature-image {
   display: block;
-  width: auto;
-  height: auto;
-  max-width: none;
-  max-height: none;
-  margin: 0 auto 6px;
-  object-fit: none;
+  width: 150px;
+  height: 62px;
+  margin: 0 auto 4px;
+  object-fit: contain;
+  object-position: center bottom;
 }
 
 .journal-stamp-image {
