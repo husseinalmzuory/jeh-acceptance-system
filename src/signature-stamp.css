@@ -1,4 +1,10 @@
-.letter-footer { position: relative; }
+.letter-footer {
+  position: relative;
+}
+
+.letter-signature {
+  position: relative;
+}
 
 .editor-signature-image {
   display: block;
@@ -6,15 +12,15 @@
   height: auto;
   max-width: none;
   max-height: none;
-  margin: 0 auto 4px;
+  margin: 0 auto 6px;
   object-fit: none;
 }
 
 .journal-stamp-image {
   position: absolute;
   left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
+  bottom: 8px;
+  transform: translateX(-50%);
   display: block;
   width: auto;
   height: auto;
@@ -22,4 +28,13 @@
   max-height: none;
   object-fit: none;
   pointer-events: none;
+  z-index: 1;
+}
+
+@media print {
+  .editor-signature-image,
+  .journal-stamp-image {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
 }
